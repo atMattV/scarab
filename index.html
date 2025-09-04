@@ -16,17 +16,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
-        // Required for PDF.js to work
         pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
-
-function readFileAsDataURL(file) {
-return new Promise((resolve, reject) => {
-const reader = new FileReader();
-reader.onload = () => resolve(reader.result);
-reader.onerror = (error) => reject(error);
-reader.readAsDataURL(file);
-});
-}
+        function readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+        });
+    }
     </script>
     <style>
     :root {
@@ -679,7 +677,7 @@ body.light-mode .output-box a:hover {
 </div>
 
     <!-- Main Grid Container for all Agent Cards -->
-    <div class="grid grid-cols-1 gap-8 items-stretch">
+    <div id="agentGrid" class="grid grid-cols-1 gap-8 items-stretch">
         <!-- Agent Card: Ma'at (Full Width) -->
         <div id="card-maat" class="card col-span-1 glow-default">
             <div class="agent-card-header p-4 border-b border-slate-700 relative">
@@ -808,16 +806,16 @@ body.light-mode .output-box a:hover {
                 </div>
             </details>
             <div id="refinement-chat-ptah" class="p-4 border-t border-slate-700 hidden">
-    <div id="refinement-history-maat" class="text-xs space-y-2 mb-2 max-h-48 overflow-y-auto pr-2">
-        </div>
-    <div class="flex items-center gap-2">
-        <input type="text" id="refinement-input-maat" class="input-field !text-xs !py-1 flex-grow" placeholder="e.g., Make the first requirement more concise...">
-        <button class="btn btn-secondary !py-1 !px-3 refinement-send-btn" data-agent="maat">Refine</button>
-    </div>
-    <div class="text-right mt-3">
-         <button class="btn btn-success !text-xs !py-1 !px-3 approve-and-continue-btn" data-agent="maat">Approve & Continue</button>
-    </div>
-</div>
+              <div id="refinement-history-ptah" class="text-xs space-y-2 mb-2 max-h-48 overflow-y-auto pr-2">
+              </div>
+              <div class="flex items-center gap-2">
+                  <input type="text" id="refinement-input-ptah" class="input-field !text-xs !py-1 flex-grow" placeholder="e.g., Combine the first two stories...">
+                  <button class="btn btn-secondary !py-1 !px-3 refinement-send-btn" data-agent="ptah">Refine</button>
+              </div>
+              <div class="text-right mt-3">
+                   <button class="btn btn-success !text-xs !py-1 !px-3 approve-and-continue-btn" data-agent="ptah">Approve & Continue</button>
+              </div>
+            </div>
         </div>
         <!-- Agent Card: Osiris -->
         <div id="card-osiris" class="card col-span-1 glow-default">
@@ -870,14 +868,14 @@ body.light-mode .output-box a:hover {
                 </div>
             </details>
             <div id="refinement-chat-osiris" class="p-4 border-t border-slate-700 hidden">
-    <div id="refinement-history-maat" class="text-xs space-y-2 mb-2 max-h-48 overflow-y-auto pr-2">
-        </div>
+    <div id="refinement-history-osiris" class="text-xs space-y-2 mb-2 max-h-48 overflow-y-auto pr-2">
+    </div>
     <div class="flex items-center gap-2">
-        <input type="text" id="refinement-input-maat" class="input-field !text-xs !py-1 flex-grow" placeholder="e.g., Make the first requirement more concise...">
-        <button class="btn btn-secondary !py-1 !px-3 refinement-send-btn" data-agent="maat">Refine</button>
+        <input type="text" id="refinement-input-osiris" class="input-field !text-xs !py-1 flex-grow" placeholder="e.g., Add more detail to the ACs...">
+        <button class="btn btn-secondary !py-1 !px-3 refinement-send-btn" data-agent="osiris">Refine</button>
     </div>
     <div class="text-right mt-3">
-         <button class="btn btn-success !text-xs !py-1 !px-3 approve-and-continue-btn" data-agent="maat">Approve & Continue</button>
+        <button class="btn btn-success !text-xs !py-1 !px-3 approve-and-continue-btn" data-agent="osiris">Approve & Continue</button>
     </div>
 </div>
         </div>
@@ -922,14 +920,14 @@ body.light-mode .output-box a:hover {
                 </div>
             </details>
             <div id="refinement-chat-bastet" class="p-4 border-t border-slate-700 hidden">
-    <div id="refinement-history-maat" class="text-xs space-y-2 mb-2 max-h-48 overflow-y-auto pr-2">
-        </div>
+    <div id="refinement-history-bastet" class="text-xs space-y-2 mb-2 max-h-48 overflow-y-auto pr-2">
+    </div>
     <div class="flex items-center gap-2">
-        <input type="text" id="refinement-input-maat" class="input-field !text-xs !py-1 flex-grow" placeholder="e.g., Make the first requirement more concise...">
-        <button class="btn btn-secondary !py-1 !px-3 refinement-send-btn" data-agent="maat">Refine</button>
+        <input type="text" id="refinement-input-bastet" class="input-field !text-xs !py-1 flex-grow" placeholder="e.g., The first estimate is too high...">
+        <button class="btn btn-secondary !py-1 !px-3 refinement-send-btn" data-agent="bastet">Refine</button>
     </div>
     <div class="text-right mt-3">
-         <button class="btn btn-success !text-xs !py-1 !px-3 approve-and-continue-btn" data-agent="maat">Approve & Continue</button>
+        <button class="btn btn-success !text-xs !py-1 !px-3 approve-and-continue-btn" data-agent="bastet">Approve & Continue</button>
     </div>
 </div>
         </div>
@@ -974,14 +972,14 @@ body.light-mode .output-box a:hover {
                 </div>
             </details>
             <div id="refinement-chat-anubis" class="p-4 border-t border-slate-700 hidden">
-    <div id="refinement-history-maat" class="text-xs space-y-2 mb-2 max-h-48 overflow-y-auto pr-2">
-        </div>
+    <div id="refinement-history-anubis" class="text-xs space-y-2 mb-2 max-h-48 overflow-y-auto pr-2">
+    </div>
     <div class="flex items-center gap-2">
-        <input type="text" id="refinement-input-maat" class="input-field !text-xs !py-1 flex-grow" placeholder="e.g., Make the first requirement more concise...">
-        <button class="btn btn-secondary !py-1 !px-3 refinement-send-btn" data-agent="maat">Refine</button>
+        <input type="text" id="refinement-input-anubis" class="input-field !text-xs !py-1 flex-grow" placeholder="e.g., Add a test case for invalid login...">
+        <button class="btn btn-secondary !py-1 !px-3 refinement-send-btn" data-agent="anubis">Refine</button>
     </div>
     <div class="text-right mt-3">
-         <button class="btn btn-success !text-xs !py-1 !px-3 approve-and-continue-btn" data-agent="maat">Approve & Continue</button>
+        <button class="btn btn-success !text-xs !py-1 !px-3 approve-and-continue-btn" data-agent="anubis">Approve & Continue</button>
     </div>
 </div>
         </div>
@@ -1632,8 +1630,9 @@ Test Cases: ${testCases}
     });
 
     projectNameInput.addEventListener('input', (e) => {
-        AppState.projectName = e.target.value.trim();
-        saveState();
+    AppState.projectName = e.target.value.trim();
+    updateProcessButtonState();
+    saveState();
     });
     additionalContextInput.addEventListener('input', (e) => {
         AppState.additionalContext = e.target.value;
@@ -1688,7 +1687,6 @@ Test Cases: ${testCases}
         AppState.isIndexingComplete = false;
         updateExecutionButtonStates();
         startIndexButton.textContent = 'Index Documents';
-        startIndexButton.disabled = AppState.files.length === 0;
         updateThothState(false);
         thothChatHistory.innerHTML = `<div class="flex justify-start"><div class="chat-bubble chat-bubble-agent"><p>New documents added. Please re-index to update the context.</p></div></div>`;
         clearThothAttachments();
@@ -1702,7 +1700,6 @@ Test Cases: ${testCases}
         AppState.isIndexingComplete = false;
         updateExecutionButtonStates();
         startIndexButton.textContent = 'Index Documents';
-        startIndexButton.disabled = AppState.files.length === 0;
         updateThothState(false);
         thothChatHistory.innerHTML = `<div class="flex justify-start"><div class="chat-bubble chat-bubble-agent"><p>Document removed. Please re-index to update the context.</p></div></div>`;
         clearThothAttachments();
@@ -1744,8 +1741,10 @@ Test Cases: ${testCases}
     }
    
     function updateProcessButtonState() {
-        startIndexButton.disabled = AppState.files.length === 0;
-    }
+    const hasFiles = AppState.files.length > 0;
+    const hasProjectName = AppState.projectName && AppState.projectName.trim() !== '';
+    startIndexButton.disabled = !hasFiles || !hasProjectName;
+}
 
     function updateAgentProgress(agentName, status) {
         const card = document.getElementById(`card-${agentName}`);
@@ -1904,7 +1903,12 @@ Test Cases: ${testCases}
         historyElement.appendChild(userBubble);
         AppState.refinementHistory[agentName].push({ role: 'user', content: userMessage });
         try {
-            const previousOutput = AppState.agentOutputs[agentName] || (agentName === 'maat' ? AppState.agentOutputs.maat_requirements : '');
+            let previousOutput;
+if (agentName === 'maat') {
+    previousOutput = `### Extracted Requirements\n${AppState.agentOutputs.maat_requirements}\n\n### Identified Gaps & Questions\n${AppState.agentOutputs.maat_gaps}`;
+} else {
+    previousOutput = AppState.agentOutputs[agentName] || '';
+}
             const conversation = AppState.refinementHistory[agentName].map(msg => `${msg.role}: ${msg.content}`).join('\n');
             const refinementPrompt = `You are an expert agent tasked with refining an existing document based on user feedback.
 ---START ORIGINAL DOCUMENT---
@@ -2031,7 +2035,6 @@ Your task is to apply the latest user request to the original document. You MUST
             document.getElementById('projectGoalInput').focus();
             return;
         }
-        if (AppState.isRunInProgress) return;
         AppState.activeMode = mode;
         AppState.isRunInProgress = true;
         AppState.stopRequested = false;
@@ -2051,23 +2054,32 @@ Your task is to apply the latest user request to the original document. You MUST
             stopAnalysis();
             return;
         }
-        AppState.currentStep = pipelineToRun[0] || 'maat';
-        for (const agentName of pipelineToRun) {
-            if (AppState.stopRequested) {
-                showErrorPopup("Analysis stopped by user.");
-                break;
-            }
-            AppState.currentStep = agentName;
-            await runNextStep();
-            const agentState = AppState.agentUiStates[agentName];
-            if (agentState.status === 'error') {
-                break;
-            }
-            if (mode === 'step') {
-                pauseTimer();
-                break;
-            }
+if (AppState.currentStep === 'idle') {
+    AppState.currentStep = pipelineToRun[0] || 'maat';
+}    
+
+if (mode === 'full' || mode === 'manual') {
+    for (const agentName of pipelineToRun) {
+        if (AppState.stopRequested) {
+            showErrorPopup("Analysis stopped by user.");
+            break;
         }
+        AppState.currentStep = agentName;
+        await runNextStep();
+        const agentState = AppState.agentUiStates[agentName];
+        if (agentState.status === 'error') {
+            break;
+        }
+    }
+        } else if (mode === 'step') {
+    await runNextStep();
+    const agentState = AppState.agentUiStates[AppState.currentStep];
+    if (agentState.status !== 'error') {
+        pauseTimer();
+    }
+    AppState.isRunInProgress = false;
+}
+
         const lastAgentInRun = pipelineToRun[pipelineToRun.length - 1];
         if (AppState.agentUiStates[lastAgentInRun]?.status === 'complete') {
             // Run completed
@@ -2823,36 +2835,44 @@ User Question: ${userPrompt || "Please analyze the attached file(s) in the conte
     });
    
     function updateAgentCardUI(agentName) {
-        const uiState = AppState.agentUiStates[agentName];
-        if (!uiState) return;
-        const controls = document.getElementById(`controls-${agentName}`);
-        if (!controls) return;
-        const feedbackBtn = controls.querySelector('.feedback-btn');
-        const retryBtn = controls.querySelector('.retry-btn');
-        const feedbackBox = document.getElementById(`feedback-box-${agentName}`);
-        feedbackBtn?.classList.add('hidden');
-        retryBtn?.classList.add('hidden');
-        feedbackBox?.classList.add('hidden');
-        if(feedbackBtn) feedbackBtn.disabled = uiState.feedbackSubmitted;
-        updateAgentProgress(agentName, uiState.status);
-        switch (uiState.status) {
-            case 'complete':
-                if (AppState.activeMode === 'step') {
-                    feedbackBtn?.classList.remove('hidden');
-                }
-                break;
-            case 'editing_feedback':
-                feedbackBox?.classList.remove('hidden');
-                feedbackBox?.querySelector('textarea')?.focus();
-                break;
-            case 'error':
-                retryBtn?.classList.remove('hidden');
-                if (AppState.activeMode === 'step') {
-                    feedbackBtn?.classList.remove('hidden');
-                }
-                break;
-        }
+    console.log(`--- Updating UI for [${agentName}] ---`);
+    const uiState = AppState.agentUiStates[agentName];
+    if (!uiState) {
+        console.error(`No UI state found for agent: ${agentName}`);
+        return;
     }
+    console.log('Current state:', JSON.parse(JSON.stringify(uiState)));
+
+    const controls = document.getElementById(`controls-${agentName}`);
+    if (!controls) return;
+    const feedbackBtn = controls.querySelector('.feedback-btn');
+    const retryBtn = controls.querySelector('.retry-btn');
+    const feedbackBox = document.getElementById(`refinement-chat-${agentName}`);
+
+    feedbackBox?.classList.add('hidden');
+    feedbackBtn?.classList.add('hidden');
+    retryBtn?.classList.add('hidden');
+    if (feedbackBtn) feedbackBtn.disabled = uiState.feedbackSubmitted;
+
+    updateAgentProgress(agentName, uiState.status);
+    switch (uiState.status) {
+        case 'complete':
+            if (AppState.activeMode === 'step' && !uiState.feedbackSubmitted) {
+                feedbackBtn?.classList.remove('hidden');
+            }
+            break;
+        case 'editing_feedback':
+            feedbackBox?.classList.remove('hidden');
+            feedbackBox?.querySelector('input')?.focus();
+            break;
+        case 'error':
+            retryBtn?.classList.remove('hidden');
+            if (AppState.activeMode === 'step') {
+                feedbackBtn?.classList.remove('hidden');
+            }
+            break;
+    }
+}
 
     function updateAllAgentUIs() {
         AGENT_PIPELINE.forEach(agentName => updateAgentCardUI(agentName));
@@ -2895,37 +2915,44 @@ User Question: ${userPrompt || "Please analyze the attached file(s) in the conte
         });
     });
 
-    forgeContent.addEventListener('click', (e) => {
-        const button = e.target.closest('button');
-        if (!button) return;
-        const agentCard = button.closest('.card');
-        const agentName = agentCard?.id.split('-')[1];
-        if (!agentName) return;
-        const uiState = AppState.agentUiStates[agentName];
-        if (button.classList.contains('feedback-btn')) {
-            uiState.status = 'editing_feedback';
-            AppState.refinementHistory[agentName] = [];
-            const historyElement = document.getElementById(`refinement-history-${agentName}`);
-            if (historyElement) historyElement.innerHTML = '';
-        } else if (button.classList.contains('refinement-send-btn')) {
-            handleRefinement(agentName);
-        } else if (button.classList.contains('approve-and-continue-btn')) {
-            if (AppState.activeMode === 'step') {
-                uiState.status = 'complete';
-                updateAgentCardUI(agentName);
-                const nextIndex = AGENT_PIPELINE.indexOf(agentName) + 1;
-                if (nextIndex < AGENT_PIPELINE.length) {
-                    AppState.currentStep = AGENT_PIPELINE[nextIndex];
-                    startAnalysis('step');
-                } else {
-                    stopAnalysis();
-                }
+    document.getElementById('agentGrid').addEventListener('click', (e) => {
+    const button = e.target.closest('button');
+    if (!button) return;
+    const agentCard = button.closest('.card');
+    const agentName = agentCard?.id.split('-')[1];
+    if (!agentName) return;
+    const uiState = AppState.agentUiStates[agentName];
+
+    if (button.classList.contains('feedback-btn')) {
+        console.log(`--- Feedback Button Clicked for [${agentName}] ---`);
+        const feedbackBox = document.getElementById(`refinement-chat-${agentName}`);
+        console.log(`Attempting to find feedback box with ID: refinement-chat-${agentName}. Found:`, feedbackBox);
+        uiState.status = 'editing_feedback';
+        AppState.refinementHistory[agentName] = [];
+        const historyElement = document.getElementById(`refinement-history-${agentName}`);
+        if (historyElement) historyElement.innerHTML = '';
+
+    } else if (button.classList.contains('refinement-send-btn')) {
+        handleRefinement(agentName);
+
+    } else if (button.classList.contains('approve-and-continue-btn')) {
+        if (AppState.activeMode === 'step') {
+            uiState.status = 'complete';
+            uiState.feedbackSubmitted = true;
+            updateAgentCardUI(agentName);
+            const nextIndex = AGENT_PIPELINE.indexOf(agentName) + 1;
+            if (nextIndex < AGENT_PIPELINE.length) {
+                AppState.currentStep = AGENT_PIPELINE[nextIndex];
+                startAnalysis('step');
+            } else {
+                stopAnalysis();
             }
-        } else if (button.classList.contains('retry-btn')) {
-            startAnalysis(AppState.activeMode);
         }
-        updateAgentCardUI(agentName);
-    });
+    } else if (button.classList.contains('retry-btn')) {
+        startAnalysis(AppState.activeMode);
+    }
+    updateAgentCardUI(agentName);
+});
 
     function hydrateUIFromState() {
     apiKeyInput.value = getApiKey();
@@ -2980,4 +3007,3 @@ User Question: ${userPrompt || "Please analyze the attached file(s) in the conte
 </script>
 </body>
 </html>
-
