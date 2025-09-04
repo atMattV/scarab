@@ -1964,7 +1964,15 @@ User Question: ${userPrompt || "Please analyze the attached file(s) in the conte
         startIndexButton.addEventListener('click', startIndexing);
         runFullAnalysisButton.addEventListener('click', () => startAnalysis('full'));
         runStepAnalysisButton.addEventListener('click', () => startAnalysis('step'));
-        runManualAgentsButton.addEventListener('click', () => startAnalysis('manual')); 
+        runManualAgentsButton.addEventListener('click', () => startAnalysis('manual'));
+        stopAnalysisButton.addEventListener('click', () => {
+            if (AppState.isRunInProgress) {
+        showErrorPopup('Stop request received. Analysis will halt after the current step.');
+        AppState.stopRequested = true;
+        stopAnalysisButton.disabled = true;
+        stopAnalysisButton.innerHTML = `<div class="loader !w-6 !h-6 !border-2"></div><span class="ml-2">Stopping...</span>`;
+    }
+});
 
     hydrateUIFromState();
 });
