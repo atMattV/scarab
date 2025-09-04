@@ -1,0 +1,2983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCARAB - System for Crafting Agile Roadmaps And Backlogs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- PDF.js library for PDF text extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <!-- JSZip for creating zip files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- FileSaver.js for saving files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        // Required for PDF.js to work
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+function readFileAsDataURL(file) {
+return new Promise((resolve, reject) => {
+const reader = new FileReader();
+reader.onload = () => resolve(reader.result);
+reader.onerror = (error) => reject(error);
+reader.readAsDataURL(file);
+});
+}
+    </script>
+    <style>
+    :root {
+        --glow-color: rgba(192, 132, 252, 0.5);
+        --fluo-green: #39FF14;
+    }
+    /* Dark Mode (Default) */
+    body {
+        --bg-color: #0c0a09;
+        --text-color: #d1d5db;
+        --text-color-strong: #ffffff;
+        --card-bg-color: rgba(23, 23, 23, 0.6);
+        --card-border-color: rgba(255, 255, 255, 0.1);
+        --input-bg-color: rgba(12, 10, 9, 0.8);
+        --input-border-color: #4b5563;
+        --output-box-bg: #1f2937;
+        --thought-stream-bg: #0c0a09;
+        --chat-bubble-agent-bg: #374151;
+        --header-btn-bg: rgba(23, 23, 23, 0.5);
+        --header-btn-hover-bg: rgba(38, 38, 38, 0.7);
+        --header-btn-border: #4b5563;
+        --icon-color: #d1d5db;
+        --panel-bg-alt: rgba(17, 24, 39, 0.5); /* bg-slate-900/50 */
+        --item-bg-selected: #1f2937; /* bg-slate-800 */
+    }
+    /* Light Mode - "Natural Techno" Theme */
+    body.light-mode {
+        --bg-color: #F5F3EF; /* Soft Cream */
+        --text-color: #3D4C4A; /* Dark Teal Slate */
+        --text-color-strong: #1A2E29; /* Darkest Forest Green */
+        --card-bg-color: rgba(255, 255, 255, 0.7);
+        --card-border-color: #DCE2E1; /* Light Greenish Gray */
+        --input-bg-color: #ffffff;
+        --input-border-color: #A3B5B2; /* Muted Green Gray */
+        --output-box-bg: #EDF1F0; /* Very Light Green Tint */
+        --thought-stream-bg: #F3F6F5;
+        --chat-bubble-agent-bg: #E1E8E7;
+        --header-btn-bg: rgba(255, 255, 255, 0.5);
+        --header-btn-hover-bg: rgba(240, 245, 244, 0.7);
+        --header-btn-border: #DCE2E1;
+        --icon-color: #3D4C4A;
+        --panel-bg-alt: #E1E8E7; /* Light mode panel color */
+        --item-bg-selected: #C8D3D1; /* Light mode selected items color */
+    }
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        background-image: radial-gradient(circle at top left, rgba(55, 65, 81, 0.2), transparent 40%),
+                          radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.1), transparent 50%);
+        background-attachment: fixed;
+        transition: background-color 0.3s, color 0.3s;
+    }
+    body.light-mode {
+        background-image: radial-gradient(circle at top left, rgba(0, 255, 127, 0.05), transparent 40%),
+                          radial-gradient(circle at bottom right, rgba(46, 139, 87, 0.05), transparent 50%);
+    }
+    .title-font { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .mono-font { font-family: 'Roboto Mono', monospace; }
+    .text-glow { text-shadow: 0 0 10px var(--glow-color), 0 0 4px var(--glow-color); }
+   
+    body.light-mode .text-glow {
+        color: #008060; /* Dark Electric Green */
+        text-shadow: 0 0 8px rgba(0, 255, 127, 0.4);
+    }
+    .card {
+        background-color: var(--card-bg-color);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--card-border-color);
+        border-radius: 1rem;
+        transition: background-color 0.3s, border-color 0.3s;
+    }
+
+    .file-upload-area {
+        background-color: var(--input-bg-color);
+        border: 2px dashed var(--input-border-color);
+        transition: all 0.3s ease;
+    }
+    .file-upload-area.dragover {
+        border-color: #3b82f6;
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+
+.file-list-item {
+    background-color: var(--item-bg-selected);
+}
+.file-list-text {
+    color: var(--text-color);
+}
+.file-list-icon, .file-list-remove-btn {
+    color: var(--icon-color);
+}
+body.light-mode .file-list-text {
+    color: var(--text-color-strong);
+}
+
+    body.light-mode .file-upload-area.dragover {
+        border-color: #00FF7F; /* Spring Green */
+        background-color: rgba(0, 255, 127, 0.1);
+    }
+
+body.light-mode .file-list-text {
+    color: var(--text-color-strong);
+}
+
+    .output-box {
+        background-color: var(--output-box-bg);
+        border: 1px solid var(--card-border-color);
+        min-height: 150px;
+        overflow-y: auto;
+        transition: background-color 0.3s;
+        padding-right: 0.75rem;
+    }
+
+.btn-primary {
+    background-image: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+}
+body.light-mode .btn-primary {
+    background-image: linear-gradient(135deg, #004d40 0%, #00796b 50%, #009688 100%);
+    box-shadow: 0 4px 15px rgba(0, 121, 107, 0.25);
+}
+.btn-secondary {
+    background-image: linear-gradient(135deg, #374151 0%, #4b5563 50%, #6b7280 100%);
+    box-shadow: 0 4px 15px rgba(107, 114, 128, 0.2);
+}
+
+.output-box.prose {
+    max-width: none;
+}
+
+    .loader {
+        border: 4px solid #374151;
+        border-top: 4px solid #3b82f6;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .btn { transition: all 0.3s ease; }
+    .btn-success:hover, .btn-primary:hover, .btn-manual:hover, .btn-danger:hover, .btn-secondary:hover { transform: scale(1.03); filter: brightness(1.1); }
+    .btn-success:active, .btn-primary:active, .btn-manual:active, .btn-danger:active, .btn-secondary:active { transform: scale(0.98); filter: brightness(0.9); }
+    .btn-danger { background-image: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 50%, #dc2626 100%); box-shadow: 0 4px 15px rgba(220, 38, 38, 0.2); }
+    .btn-success {
+    background-image: linear-gradient(135deg, #166534 0%, #15803d 50%, #16a34a 100%);
+    box-shadow: 0 4px 15px rgba(22, 163, 74, 0.2);
+}
+body.light-mode .btn-success {
+    background-image: linear-gradient(135deg, #004d40 0%, #00695c 50%, #00796b 100%);
+    box-shadow: 0 4px 15px rgba(0, 121, 107, 0.25);
+}
+
+    /* Add these new rules to your CSS */
+.btn-forge {
+    border-radius: 1rem;
+    padding: 1rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease-in-out;
+}
+
+/* New Analysis Button Styles */
+.btn-full, .btn-step, .btn-manual-run {
+    color: var(--text-color);
+    background-color: var(--input-bg-color);
+    border: 1px solid var(--input-border-color);
+    box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.2);
+}
+
+.btn-full:hover:not(:disabled), .btn-step:hover:not(:disabled), .btn-manual-run:hover:not(:disabled) {
+    transform: translateY(-2px);
+}
+
+/* Dark Mode Specific Hover Styles */
+.btn-full:hover:not(:disabled) {
+    color: #c084fc; /* Purple */
+    border-color: #a855f7;
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+}
+.btn-step:hover:not(:disabled) {
+    color: #7dd3fc; /* Sky Blue */
+    border-color: #38bdf8;
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+}
+.btn-manual-run:hover:not(:disabled) {
+    color: #6ee7b7; /* Emerald Green */
+    border-color: #34d399;
+    box-shadow: 0 0 15px rgba(52, 211, 153, 0.4);
+}
+
+/* Light Mode Specific Styles */
+body.light-mode .btn-full, body.light-mode .btn-step, body.light-mode .btn-manual-run {
+    color: var(--text-color-strong);
+    background-color: #FDFDFB;
+    border: 1px solid var(--card-border-color);
+    box-shadow: inset 0 1px 2px 0 rgba(0,0,0,0.05);
+}
+
+body.light-mode .btn-full:hover:not(:disabled) {
+    background-color: #c026d3; /* Fuchsia */
+    border-color: #a21caf;
+    color: #ffffff;
+}
+body.light-mode .btn-step:hover:not(:disabled) {
+    background-color: #0d9488; /* Teal */
+    border-color: #0f766e;
+    color: #ffffff;
+}
+body.light-mode .btn-manual-run:hover:not(:disabled) {
+    background-color: #65a30d; /* Lime */
+    border-color: #4d7c0f;
+    color: #ffffff;
+}
+
+body.light-mode .output-box,
+body.light-mode .output-box p,
+body.light-mode .output-box li,
+body.light-mode .output-box strong {
+    color: var(--text-color-strong);
+}
+body.light-mode .output-box a {
+    color: #00695c; /* Strong Teal */
+    text-decoration: underline;
+}
+body.light-mode .output-box a:hover {
+    color: #004d40; /* Darker Teal */
+}
+
+    body.light-mode .btn-secondary { background-image: linear-gradient(135deg, #455a64 0%, #607d8b 50%, #78909c 100%); box-shadow: 0 4px 15px rgba(96, 125, 139, 0.2); }
+    .btn-forge:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(80%); }
+    .input-field { background-color: var(--input-bg-color); border: 1px solid var(--input-border-color); color: var(--text-color-strong); transition: background-color 0.3s, border-color 0.3s; }
+    .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4); }
+    body.light-mode .input-field:focus { border-color: #009688; box-shadow: 0 0 0 2px rgba(0, 150, 136, 0.3); }
+    .select-custom { -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem; }
+    body.light-mode .select-custom { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%233D4C4A' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); }
+    .chat-bubble-user { background-color: #3b82f6; color: white; border-bottom-right-radius: 0.25rem; }
+    body.light-mode .chat-bubble-user { background-color: #00796b; }
+    .chat-bubble-agent { background-color: var(--chat-bubble-agent-bg); color: var(--text-color-strong); border-bottom-left-radius: 0.25rem; transition: background-color 0.3s, color 0.3s; }
+    .agent-card-summary .chevron { transition: transform 0.2s; }
+    .agent-card-details[open] .agent-card-summary .chevron { transform: rotate(90deg); }
+    .agent-card-content { border-top: 1px solid var(--card-border-color); }
+    .progress-bar-container { background-color: rgba(255, 255, 255, 0.1); }
+    body.light-mode .progress-bar-container { background-color: rgba(0,0,0,0.08); }
+    .progress-bar { background-color: var(--fluo-green); box-shadow: 0 0 10px var(--fluo-green), 0 0 5px var(--fluo-green); }
+    .copy-btn, .expand-btn { background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: var(--icon-color); }
+    .copy-btn:hover, .expand-btn:hover { background-color: rgba(255,255,255,0.2); }
+    body.light-mode .copy-btn, body.light-mode .expand-btn { background-color: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); }
+    body.light-mode .copy-btn:hover, body.light-mode .expand-btn:hover { background-color: rgba(0,0,0,0.1); }
+    .thought-stream-box { background-color: var(--thought-stream-bg); color: var(--text-color); border-top: 1px solid var(--card-border-color); }
+    .timer-digit { background-color: #000; color: var(--fluo-green); border: 1px solid var(--fluo-green); box-shadow: 0 0 10px var(--fluo-green); }
+    body.light-mode .timer-digit {
+        background-color: var(--text-color-strong);
+        color: #00FF7F; /* Electric Spring Green */
+        border-color: #00FF7F;
+        box-shadow: 0 0 10px rgba(0, 255, 127, 0.5);
+    }
+    .header-btn { background-color: var(--header-btn-bg); border: 1px solid var(--header-btn-border); }
+    .header-btn:hover { background-color: var(--header-btn-hover-bg); }
+    .feedback-box, .manual-input-box { border-top: 1px solid var(--card-border-color); }
+    h1, h2, h3, h4, h5, h6 { color: var(--text-color-strong); }
+    p, span, div, select, option, label, input[type="checkbox"] { color: var(--text-color); }
+    .text-slate-400 { color: var(--text-color); }
+    .text-white { color: var(--text-color-strong); }
+    .text-slate-300 { color: var(--text-color); }
+    .bg-slate-900\/50 { background-color: var(--panel-bg-alt) !important; }
+    .bg-slate-800 { background-color: var(--item-bg-selected) !important; }
+    ::-webkit-scrollbar-track { background: rgba(12, 10, 9, 0.5); }
+    ::-webkit-scrollbar-thumb { background-color: #4b5563; }
+    ::-webkit-scrollbar-thumb:hover { background-color: #6b7280; }
+    body.light-mode ::-webkit-scrollbar-track { background: #E1E8E7; }
+    body.light-mode ::-webkit-scrollbar-thumb { background-color: #A3B5B2; }
+    body.light-mode ::-webkit-scrollbar-thumb:hover { background-color: #829D99; }
+    /* UltraThink Toggle Switch */
+    .slider { background-color: #374151; }
+    input:checked + .slider { background-color: #7e22ce; }
+    body.light-mode .slider { background-color: #A3B5B2; }
+    body.light-mode input:checked + .slider { background-color: #00796b; }
+    .btn-forge { padding: 1rem; border-radius: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
+
+    .card {
+    /* Add transition for the new glow effect and border color */
+    transition: box-shadow 0.5s ease-in-out, border-color 0.5s ease-in-out;
+}
+
+.glow-default {
+    border-color: var(--card-border-color);
+    box-shadow: 0 0 15px rgba(107, 114, 128, 0.2); /* Subtle grey glow */
+}
+
+.glow-running {
+    border-color: rgba(96, 165, 250, 0.8); /* Blue */
+    box-shadow: 0 0 20px 4px rgba(96, 165, 250, 0.5);
+}
+
+.glow-complete {
+    border-color: rgba(57, 255, 20, 0.8); /* Fluo Green */
+    box-shadow: 0 0 20px 4px rgba(57, 255, 20, 0.5);
+}
+
+.glow-error {
+    border-color: rgba(239, 68, 68, 0.8); /* Red */
+    box-shadow: 0 0 20px 4px rgba(239, 68, 68, 0.5);
+}
+
+    #thothChatHistory { height: 24rem; }
+    .chat-bubble { max-width: 80%; padding: 0.75rem 1rem; padding-right: 0.75rem; border-radius: 1rem; font-size: 0.8rem; position: relative; overflow-y: auto; }
+    #apiKeyModal, #faqModal { transition: opacity 0.3s ease; }
+    .agent-card { display: flex; flex-direction: column; }
+    .agent-card-details { position: relative; padding-bottom: 5px; }
+    .agent-card-summary { display: flex; align-items: center; justify-content: space-between; padding: 1rem; cursor: pointer; list-style: none; }
+    #agentCard-seshat .agent-card-content { height: 260px; overflow-y: auto; }
+    .agent-card-details[open] .agent-card-content { height: auto; }
+    .progress-bar-container { position: absolute; bottom: 0; left: 0; right: 0; height: 5px; border-radius: 0 0 1rem 1rem; overflow: hidden; }
+    .progress-bar { width: 0%; height: 100%; transition: width 0.5s ease-in-out; border-radius: 0 2px 2px 0; }
+    .copy-btn, .expand-btn { padding: 4px; border-radius: 6px; transition: background-color 0.2s, color 0.2s; }
+    .thought-stream-box { height: 120px; padding: 0.75rem; padding-right: 0.25rem; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; font-size: 0.75rem; transition: background-color 0.3s, color 0.3s; }
+    .logo { width: 60px; height: 60px; margin-right: 1rem; }
+    #fullscreenModal { z-index: 60; }
+    #modalContent { background-color: transparent; max-height: 85vh; height: 100%; overflow-y: auto; font-family: 'Inter', monospace; border-bottom: 1px solid var(--card-border-color); }
+    #modalControls { background-color: transparent; backdrop-filter: none; }
+    .timer-display { display: flex; gap: 0.5rem; justify-content: center; }
+    .timer-digit { font-family: 'Roboto Mono', monospace; font-size: 3rem; padding: 0.5rem 1rem; border-radius: 0.5rem; line-height: 1; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+    * { scrollbar-width: thin; scrollbar-color: #4b5563 rgba(12, 10, 9, 0.5); }
+    body.light-mode * { scrollbar-color: #A3B5B2 #E1E8E7; }
+    .toggle-switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; -webkit-transition: .4s; transition: .4s; border-radius: 28px; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; -webkit-transition: .4s; transition: .4s; border-radius: 50%; }
+    input:focus + .slider { box-shadow: 0 0 1px #7e22ce; }
+    input:checked + .slider:before { -webkit-transform: translateX(22px); -ms-transform: translateX(22px); transform: translateX(22px); }
+</style>
+</head>
+<body>
+
+    <!-- Fullscreen Modal -->
+    <div id="fullscreenModal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4">
+        <div class="card p-0 w-full max-w-6xl h-full max-h-[90vh] flex flex-col">
+            <!-- Modal Header -->
+            <div id="modalHeader" class="flex justify-between items-center p-4 border-b border-slate-700 flex-shrink-0">
+                <h3 id="modalTitle" class="text-lg font-bold title-font text-glow">Expanded View</h3>
+                <div class="flex items-center gap-4">
+                    <button id="modalDownloadButton" class="header-btn p-2 rounded-lg" title="Download as .txt">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                    </button>
+                    <button id="modalCloseButton" class="header-btn p-2 rounded-lg" title="Close">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+            </div>
+            <!-- Modal Content -->
+            <div id="modalContent" class="flex-grow p-4 overflow-y-auto prose prose-invert max-w-none text-sm">
+                <!-- Content will be injected here -->
+            </div>
+            <!-- Thoth Chat Input (Initially Hidden) -->
+            <div id="modalChatContainer" class="p-4 border-t border-slate-700 flex-shrink-0 hidden">
+                <div class="flex gap-2">
+                    <input type="text" id="modalThothInput" class="input-field block w-full px-4 py-2 rounded-full text-sm shadow-sm placeholder-slate-500 focus:outline-none mono-font" placeholder="Continue the conversation...">
+                    <button id="modalThothSendButton" class="btn btn-primary text-white font-bold py-2 px-4 rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Key Modal -->
+    <div id="apiKeyModal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="card p-8 rounded-xl w-full max-w-md relative">
+            <button id="closeModalButton" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h2 class="text-2xl font-bold mb-4 title-font text-glow">API Key</h2>
+            <p class="mb-4 text-sm">Please enter your Gemini API key. This is stored only in your browser and is required to run the analysis.</p>
+            <label for="apiKeyInput" class="block text-lg font-medium mb-2">Gemini API Key</label>
+            <input type="password" id="apiKeyInput" name="apiKeyInput" class="input-field block w-full px-3 py-2 rounded-md text-sm shadow-sm placeholder-slate-500 focus:outline-none" placeholder="Enter your API key here">
+            <div class="mt-6 text-right">
+                <button id="saveApiKeyButton" class="btn btn-primary text-white font-bold py-2 px-6 rounded-lg">Save</button>
+            </div>
+        </div>
+    </div>
+
+<!-- Project Goal Modal -->
+<div id="projectGoalModal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+    <div class="card p-8 rounded-xl w-full max-w-lg relative">
+        <h2 class="text-2xl font-bold mb-4 title-font text-glow">Define Project Goal</h2>
+        <p class="mb-4 text-sm">Please provide the primary, high-level goal for this project. This will guide the Agents in creating more relevant artifacts. (e.g., "Reduce customer churn by improving the checkout process," or "Launch a new feature to allow users to create public profiles.")</p>
+        <label for="projectGoalInput" class="block text-lg font-medium mb-2">Primary Goal</label>
+        <textarea id="projectGoalInput" class="input-field block w-full px-3 py-2 rounded-md text-sm shadow-sm placeholder-slate-500 focus:outline-none" rows="4" placeholder="What is the main objective?"></textarea>
+        <div class="mt-6 text-right">
+            <button id="saveProjectGoalButton" class="btn btn-primary text-white font-bold py-2 px-6 rounded-lg">Continue to Forge</button>
+        </div>
+    </div>
+</div>
+
+    <!-- FAQ Modal -->
+    <div id="faqModal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="card p-8 rounded-xl w-full max-w-2xl relative max-h-[80vh] flex flex-col">
+            <button id="closeFaqModalButton" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h2 class="text-2xl font-bold mb-4 title-font text-glow">Frequently Asked Questions</h2>
+            <div class="space-y-4 overflow-y-auto pr-4">
+                <details class="group">
+                    <summary class="text-lg font-semibold cursor-pointer list-none flex justify-between items-center">
+                        What is SCARAB?
+                        <svg class="w-5 h-5 transition-transform transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </summary>
+                    <p class="mt-2 text-sm">SCARAB (System for Crafting Agile Roadmaps And Backlogs) is a multi-agent system designed to accelerate the initial phases of agile software development. It takes raw documents (like PRDs, business cases, PDFs, or even **images** of whiteboards) and transforms them into a structured set of agile artifacts, including requirements, user stories, size estimates, and BDD test cases.</p>
+                </details>
+                <details class="group">
+                    <summary class="text-lg font-semibold cursor-pointer list-none flex justify-between items-center">
+                        How does each agent contribute?
+                        <svg class="w-5 h-5 transition-transform transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </summary>
+                    <ul class="mt-2 text-sm space-y-2 list-disc list-inside">
+                        <li><strong>CQChat:</strong> Acts as your Pocket Solution Architect. It uses **semantic search** to find the most relevant information from your documents and the agents' analyses to answer your questions accurately.</li>
+                        <li><strong>RAG Indexer:</strong> It reads all uploaded documents, describes any images, and breaks all information down into small, meaningful chunks. It then creates **vector embeddings** for each chunk, enabling powerful semantic search.</li>
+                        <li><strong>Requirements Extractor:</strong> It examines the document chunks to extract key functional and non-functional requirements. It also identifies potential gaps, ambiguities, or questions that need clarification.</li>
+                        <li><strong>User Stories Builder:</strong> It takes the requirements from Ma'at and structures them into a formal agile backlog of Epics and User Stories, complete with personas and justifications.</li>
+                        <li><strong>User Stories Expander:</strong> It elaborates on each user story, adding detailed implementation tasks and Gherkin-style acceptance criteria to make them "Definition of Ready".</li>
+                        <li><strong>Effort Estimator:</strong> It assesses the complexity of the expanded stories and assigns a T-shirt size estimate (XS, S, M, L, XL) to each one, providing a justification for its reasoning.</li>
+                        <li><strong>Test Automator:</strong> It generates a set of BDD (Behavior-Driven Development) test cases in Gherkin format based on the acceptance criteria, preparing the groundwork for automated testing.</li>
+                        <li><strong>Artifacts Generator:</strong> This final agent gathers all the generated artifacts and packages them into a downloadable .zip file containing several organized CSV files for easy import into tools like Jira or Azure DevOps.</li>
+                    </ul>
+                </details>
+                <details class="group">
+                    <summary class="text-lg font-semibold cursor-pointer list-none flex justify-between items-center">
+                        How does the semantic search work?
+                        <svg class="w-5 h-5 transition-transform transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </summary>
+                    <p class="mt-2 text-sm">Instead of just matching keywords, SCARAB uses a technique called Retrieval Augmented Generation (RAG). When you index documents, the **Seshat** agent creates a numerical representation (an "embedding") of the meaning of each text chunk. When you or an agent asks a question, that question is also converted into an embedding. The system then performs a similarity search to find the document chunks whose meanings are closest to your query, providing much more relevant and context-aware information to the agents.</p>
+                </details>
+                <details class="group">
+                    <summary class="text-lg font-semibold cursor-pointer list-none flex justify-between items-center">
+                        Can the app read responses aloud?
+                        <svg class="w-5 h-5 transition-transform transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </summary>
+                    <p class="mt-2 text-sm">Yes. Every response from Thoth will have a small speaker icon. Clicking this button will use Text-to-Speech technology to read the agent's message out loud.</p>
+                </details>
+                <details class="group">
+                    <summary class="text-lg font-semibold cursor-pointer list-none flex justify-between items-center">
+                        What are the different execution modes?
+                        <svg class="w-5 h-5 transition-transform transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </summary>
+                     <p class="mt-2 text-sm space-y-2">
+                         <strong>Run Full Analysis:</strong> This is the "fire and forget" mode. It runs the entire agent pipeline from start to finish without any user intervention. It's the fastest way to get from documents to a complete set of downloadable artifacts.
+                         <br><br>
+                         <strong>HTL Analysis:</strong> This is the guided, Human-in-the-Loop mode. It runs one agent at a time, pausing after each step. This allows you to review the output, provide feedback or corrections in a text box, and then approve the result before proceeding to the next agent.
+                         <br><br>
+                         <strong>Manual Agents:</strong> This mode gives you granular control. You can select specific agents using the checkboxes on their cards and run only that part of the pipeline. This is useful if you only need to generate requirements or want to re-run a specific step. It requires documents to be indexed first.
+                     </p>
+                </details>
+                <details class="group">
+                    <summary class="text-lg font-semibold cursor-pointer list-none flex justify-between items-center">
+                        What is "UltraThink"?
+                        <svg class="w-5 h-5 transition-transform transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </summary>
+                    <p class="mt-2 text-sm">The <strong>UltraThink</strong> toggle allocates a larger processing budget to the AI models. When enabled, the agents engage in more detailed internal reasoning, planning, and web research before generating their final output. This can lead to higher quality, more nuanced results, especially for complex documents, but may take slightly longer to run.</p>
+                </details>
+                <details class="group">
+                    <summary class="text-lg font-semibold cursor-pointer list-none flex justify-between items-center">
+                        Is my API key secure?
+                        <svg class="w-5 h-5 transition-transform transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </summary>
+                    <p class="mt-2 text-sm">Yes. Your Gemini API key is stored exclusively in your browser's local storage. It is never sent to any server other than the official Google AI API endpoints required for the analysis to run. It is not logged or stored by SCARAB itself.</p>
+                </details>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Popup -->
+    <div id="errorPopup" class="fixed top-5 right-5 bg-gradient-to-br from-red-900 to-black p-4 rounded-lg shadow-lg text-white text-sm z-50 hidden opacity-0 transition-opacity duration-300">
+        API Key is required. Please set it in the API settings.
+    </div>
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-screen-2xl">
+
+        <!-- Header -->
+        <header class="mb-8 flex justify-between items-center">
+            <div class="flex items-center">
+                 <svg class="logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 10L12 3L19 10L12 21L5 10Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                    <path d="M12 3V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M12 21V15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M5 10H19" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M8.5 10L12 12.5L15.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <div>
+                    <h1 class="text-5xl font-extrabold title-font text-glow">SCARAB</h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="themeToggle" class="header-btn flex flex-col items-center p-2 rounded-lg transition-colors w-20" title="Toggle Theme">
+                    <svg id="themeIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <span class="text-xs mt-1">Theme</span>
+                </button>
+                <button id="openFaqButton" class="header-btn flex flex-col items-center p-2 rounded-lg transition-colors w-20" title="FAQ">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="text-xs mt-1">FAQ</span>
+                </button>
+                <button id="openModalButton" class="header-btn flex flex-col items-center p-2 rounded-lg transition-colors w-20" title="API Key Settings">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.602l-4.135 4.135a1.5 1.5 0 0 1-2.121 0l-.707-.707a1.5 1.5 0 0 1 0-2.121l4.135-4.135A6 6 0 0 1 21.75 8.25z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.5 9.75a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"></path></svg>
+                    <span class="text-xs mt-1">API</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Inputs Card -->
+        <div class="card p-6 mb-8 relative overflow-hidden">
+            <div class="h-2 absolute top-0 left-0 right-0 bg-gradient-to-r from-green-900 via-green-700 to-green-900" style="--tw-gradient-from: var(--bright-accent-green);"></div>
+            <div class="pt-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="md:col-span-1">
+                        <h2 class="text-xl font-bold title-font text-glow">Upload Documents</h2>
+                    </div>
+                    <div class="md:col-span-2">
+                        <h2 class="text-xl font-bold title-font text-glow text-center">Define Context</h2>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start mt-4">
+                    <!-- File Upload Column -->
+                    <div class="md:col-span-1">
+                        <div id="fileUploadArea" class="file-upload-area p-6 text-center rounded-lg cursor-pointer h-full flex flex-col justify-center">
+                            <input type="file" id="fileInput" multiple class="hidden" accept=".txt,.md,.html,.json,.csv,.pdf,.png,.jpg,.jpeg,.webp,.mp3,.wav,audio/*,image/*">
+                            <svg class="mx-auto h-10 w-10 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                            <p class="mt-3 text-sm"><span class="font-semibold text-blue-400">Click to upload</span> or drag & drop</p>
+                        </div>
+                        <div id="fileList" class="mt-4 space-y-2"></div>
+                    </div>
+                    <!-- Context Column -->
+                    <div class="md:col-span-2">
+        <div>
+            <h3 class="text-lg font-semibold mb-2 title-font text-glow">Project Name</h3>
+            <input type="text" id="projectName" class="input-field block w-full px-3 py-2 rounded-md text-sm shadow-sm placeholder-slate-500 focus:outline-none" placeholder="e.g., Q3_Feature_Launch">
+        </div>
+    <div class="mt-6">
+        <h3 class="text-lg font-semibold mb-2 title-font text-glow">Additional Context <small class="font-normal text-sm">(optional)</small></h3>
+        <textarea id="additionalContext" class="input-field block w-full px-3 py-2 rounded-md text-sm shadow-sm placeholder-slate-500 focus:outline-none" rows="4" placeholder="Provide any high-level context, goals, or constraints for the entire project..."></textarea>
+    </div>
+</div>
+                    </div>
+                </div>
+            </div>
+             <div class="mt-8 text-center">
+<button id="startIndexButton" class="btn btn-primary text-white font-bold py-3 px-8 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mx-auto">
+        Index Documents
+</button>
+            </div>
+        </div>
+
+        <!-- Thoth Chatbot -->
+        <div class="card p-6 mb-8 flex flex-col">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+    <svg class="w-8 h-8 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+       <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+    </svg>
+    <h2 class="text-2xl font-bold title-font text-glow">Contextual Query Chat</h2>
+</div>
+                <button class="expand-btn -mt-4" data-content-source="thothChatHistory" data-agent-name="CQC" data-content-type="Chat_History">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg>
+                </button>
+            </div>
+            <div id="thothChatHistory" class="flex-grow overflow-y-auto pr-2 pt-4 space-y-4 mono-font">
+                <div class="flex justify-start">
+                    <div class="chat-bubble chat-bubble-agent">
+                        <p>Welcome to the Contextual Query Chat. I can answer questions about your indexed documents or the generated artifacts. Please index your documents to begin.</p>
+                    </div>
+                </div>
+            </div>
+            <div>
+    <!-- This is the new container for showing attached files -->
+    <div class="mt-4">
+    <div id="thothAttachmentsContainer" class="mb-2 flex flex-wrap gap-2"></div>
+
+    <div class="mt-1 flex gap-2">
+        <input type="file" id="thothFileInput" multiple class="hidden" accept=".txt,.md,.pdf,.png,.jpg,.jpeg">
+
+        <button id="thothAttachmentButton" class="btn btn-secondary text-white p-3 rounded-full flex items-center justify-center transition-colors duration-300" disabled title="Attach Files to this Message">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+        </button>
+
+        <input type="text" id="thothInput" class="input-field block w-full px-4 py-2 rounded-full text-sm shadow-sm placeholder-slate-500 focus:outline-none mono-font" placeholder="Ask about documents or artifacts..." disabled>
+        <button id="thothSendButton" class="btn btn-primary text-white font-bold py-2 px-4 rounded-full flex items-center justify-center" disabled>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"></path></svg>
+        </button>
+    </div>
+</div>
+</div>
+        </div>
+       
+        <!-- Seshat Card -->
+        <div id="seshat-container" class="mb-8">
+            <div id="card-seshat" class="card glow-default">
+                <details id="agentCard-seshat" class="agent-card-details">
+                    <summary class="agent-card-summary">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-6 h-6 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                            <h3 class="text-lg font-bold"><span class="text-glow">RAG Indexer</span></h3>
+                        </div>
+                        <svg class="chevron text-slate-500 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </summary>
+                    <div class="agent-card-content prose prose-invert max-w-none text-sm">
+                        <div id="indexerOutput" class="p-4"><p>Document chunks will appear here.</p></div>
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <!-- Agent Forge -->
+        <div>
+            <div id="forgeContent">
+    <h2 class="text-3xl font-bold title-font text-glow mb-8 text-center">Artifacts Generation</h2>
+    <!-- UltraThink Toggle -->
+    <div class="flex justify-center items-center gap-4 mb-6">
+        <span class="font-semibold text-lg title-font text-glow">UltraThink</span>
+        <label class="toggle-switch">
+            <input type="checkbox" id="ultraThinkToggle" checked>
+            <span class="slider"></span>
+        </label>
+    </div>
+    <div class="max-w-3xl mx-auto relative mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button id="runFullAnalysisButton" class="btn btn-forge btn-full" disabled>
+                <svg class="w-7 h-7 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+                <span class="text-lg font-bold">Full Analysis</span>
+            </button>
+            <button id="runStepAnalysisButton" class="btn btn-forge btn-step" disabled>
+                <svg class="w-7 h-7 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
+                <span class="text-lg font-bold">HTL Analysis</span>
+            </button>
+            <button id="runManualAgentsButton" class="btn btn-forge btn-manual-run" disabled>
+                <svg class="w-7 h-7 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0h9.75m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg>
+                <span class="text-lg font-bold">Manual Agents</span>
+            </button>
+        </div>
+<button id="stopAnalysisButton" class="btn btn-danger text-white font-bold py-3 px-8 rounded-lg hidden mt-4 flex items-center justify-center gap-2 mx-auto">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    </svg>
+    Stop Analysis
+</button>
+    </div>
+</div>
+
+    <!-- Main Grid Container for all Agent Cards -->
+    <div class="grid grid-cols-1 gap-8 items-stretch">
+        <!-- Agent Card: Ma'at (Full Width) -->
+        <div id="card-maat" class="card col-span-1 glow-default">
+            <div class="agent-card-header p-4 border-b border-slate-700 relative">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" id="checkbox-maat" class="agent-checkbox h-5 w-5 rounded bg-slate-700 border-slate-500 text-blue-500 focus:ring-blue-600">
+                        <svg class="w-6 h-6 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                        <h3 class="text-lg font-bold"><span class="text-glow">Requirements Extractor</span></h3>
+                    </div>
+                    <div id="controls-maat" class="flex items-center gap-2">
+                        <button class="feedback-btn hidden text-xs bg-slate-600 hover:bg-slate-500 text-white font-semibold py-1 px-3 rounded">Add Feedback</button>
+                        <button class="retry-btn hidden text-xs bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-1 px-3 rounded">Retry</button>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
+                <!-- Column 1: Thought Stream & Web Research -->
+                <div class="relative">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="text-xs font-semibold uppercase">Thought Stream</h4>
+                        <button class="expand-btn" data-content-source="thought-stream-maat" data-agent-name="Requirements Extractor" data-content-type="Thought_Stream">
+                            <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg>
+                        </button>
+                    </div>
+                    <div id="thought-stream-maat" class="thought-stream-box !h-48">
+                       <p class="p-4">Awaiting thought stream...</p>
+                    </div>
+                    <div id="web-research-maat" class="relative hidden mt-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-xs font-semibold uppercase flex items-center gap-2 text-amber-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9V3" /></svg>
+                                Web Research Findings
+                            </h4>
+                            <button class="expand-btn" data-content-source="research-content-maat" data-agent-name="Requirements Extractor" data-content-type="Web_Research">
+                                <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg>
+                            </button>
+                        </div>
+                        <div id="research-content-maat" class="output-box p-2 rounded-md h-48 text-xs prose prose-invert max-w-none"></div>
+                    </div>
+                </div>
+                <!-- Column 2: Requirements -->
+                <div class="relative">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="font-semibold">Requirements</h4>
+                        <div class="flex gap-2">
+                            <button class="copy-btn" data-target="extractorOutput"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button>
+                            <button class="expand-btn" data-content-source="extractorOutput" data-agent-name="Requirements Extractor" data-content-type="Requirements"><svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg></button>
+                        </div>
+                    </div>
+                    <div id="extractorOutput" class="output-box p-2 rounded-md h-48 text-xs prose prose-invert max-w-none"></div>
+                </div>
+                <!-- Column 3: Gaps -->
+                <div class="relative">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="font-semibold">Gaps & Questions</h4>
+                        <div class="flex gap-2">
+                            <button class="copy-btn" data-target="gapsOutput"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button>
+                            <button class="expand-btn" data-content-source="gapsOutput" data-agent-name="Requirements Extractor" data-content-type="Gaps_and_Questions"><svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg></button>
+                        </div>
+                    </div>
+                    <div id="gapsOutput" class="output-box p-2 rounded-md h-48 text-xs prose prose-invert max-w-none"></div>
+                </div>
+            </div>
+            <div id="refinement-chat-maat" class="p-4 border-t border-slate-700 hidden">
+    <div id="refinement-history-maat" class="text-xs space-y-2 mb-2 max-h-48 overflow-y-auto pr-2">
+        </div>
+    <div class="flex items-center gap-2">
+        <input type="text" id="refinement-input-maat" class="input-field !text-xs !py-1 flex-grow" placeholder="e.g., Make the first requirement more concise...">
+        <button class="btn btn-secondary !py-1 !px-3 refinement-send-btn" data-agent="maat">Refine</button>
+    </div>
+    <div class="text-right mt-3">
+         <button class="btn btn-success !text-xs !py-1 !px-3 approve-and-continue-btn" data-agent="maat">Approve & Continue</button>
+    </div>
+</div>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 items-stretch mt-8">
+        <!-- Agent Card: Ptah -->
+        <div id="card-ptah" class="card col-span-1 glow-default">
+            <div class="agent-card-header p-4 border-b border-slate-700 relative">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" id="checkbox-ptah" class="agent-checkbox h-5 w-5 rounded bg-slate-700 border-slate-500 text-blue-500 focus:ring-blue-600">
+                        <svg class="w-6 h-6 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /></svg>
+                        <h3 class="text-lg font-bold"><span class="text-glow">User Stories Builder</span></h3>
+                    </div>
+                    <div id="controls-ptah" class="flex items-center gap-2">
+                        <button class="feedback-btn hidden text-xs bg-slate-600 hover:bg-slate-500 text-white font-semibold py-1 px-3 rounded">Add Feedback</button>
+                        <button class="retry-btn hidden text-xs bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-1 px-3 rounded">Retry</button>
+                    </div>
+                </div>
+            </div>
+            <div class="relative p-4 border-b border-slate-800">
+                <h4 class="text-xs font-semibold mb-2 uppercase">Thought Stream</h4>
+                 <button class="expand-btn absolute top-3 right-3" data-content-source="thought-stream-ptah" data-agent-name="User Stories Builder" data-content-type="Thought_Stream">
+                    <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg>
+                </button>
+                <div id="thought-stream-ptah" class="thought-stream-box !h-24 !p-0 !border-none !bg-transparent">
+                    <p class="p-4">Awaiting thought stream...</p>
+                </div>
+            </div>
+            <div id="web-research-ptah" class="web-research-box hidden relative p-4 border-b border-slate-800">
+                <h4 class="text-xs font-semibold mb-2 uppercase flex items-center gap-2 text-amber-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9V3" /></svg>
+                    Web Research Findings
+                </h4>
+                <button class="expand-btn absolute top-3 right-3" data-content-source="research-content-ptah" data-agent-name="User Stories Builder" data-content-type="Web_Research">
+                    <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg>
+                </button>
+                <div id="research-content-ptah" class="output-box p-2 rounded-md h-24 text-xs prose prose-invert max-w-none"></div>
+            </div>
+            <details id="agentCard-ptah" class="agent-card-details">
+                <summary class="agent-card-summary">
+                     <span class="text-sm">View Output</span>
+                    <svg class="chevron text-slate-500 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </summary>
+                <div class="agent-card-content text-sm">
+                    <div class="flex justify-between items-center mb-2">
+                         <h4 class="font-semibold">User Stories</h4>
+                        <div class="flex gap-2">
+                            <button class="copy-btn" data-target="analyzerOutput"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button>
+                            <button class="expand-btn" data-content-source="analyzerOutput" data-agent-name="User Stories Builder" data-content-type="User_Stories"><svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg></button>
+                        </div>
+                    </div>
+                    <div id="analyzerOutput" class="output-box p-2 rounded-md h-64 text-xs prose prose-invert max-w-none"></div>
+                </div>
+            </details>
+            <div id="refinement-chat-ptah" class="p-4 border-t border-slate-700 hidden">
+    <div id="refinement-history-maat" class="text-xs space-y-2 mb-2 max-h-48 overflow-y-auto pr-2">
+        </div>
+    <div class="flex items-center gap-2">
+        <input type="text" id="refinement-input-maat" class="input-field !text-xs !py-1 flex-grow" placeholder="e.g., Make the first requirement more concise...">
+        <button class="btn btn-secondary !py-1 !px-3 refinement-send-btn" data-agent="maat">Refine</button>
+    </div>
+    <div class="text-right mt-3">
+         <button class="btn btn-success !text-xs !py-1 !px-3 approve-and-continue-btn" data-agent="maat">Approve & Continue</button>
+    </div>
+</div>
+        </div>
+        <!-- Agent Card: Osiris -->
+        <div id="card-osiris" class="card col-span-1 glow-default">
+            <div class="agent-card-header p-4 border-b border-slate-700 relative">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" id="checkbox-osiris" class="agent-checkbox h-5 w-5 rounded bg-slate-700 border-slate-500 text-blue-500 focus:ring-blue-600">
+                        <svg class="w-6 h-6 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+                        <h3 class="text-lg font-bold"><span class="text-glow">User Stories Expander</span></h3>
+                    </div>
+                    <div id="controls-osiris" class="flex items-center gap-2">
+                        <button class="feedback-btn hidden text-xs bg-slate-600 hover:bg-slate-500 text-white font-semibold py-1 px-3 rounded">Add Feedback</button>
+                        <button class="retry-btn hidden text-xs bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-1 px-3 rounded">Retry</button>
+                    </div>
+                </div>
+            </div>
+            <div class="relative p-4 border-b border-slate-800">
+                <h4 class="text-xs font-semibold mb-2 uppercase">Thought Stream</h4>
+                 <button class="expand-btn absolute top-3 right-3" data-content-source="thought-stream-osiris" data-agent-name="User Stories Expander" data-content-type="Thought_Stream">
+                    <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg>
+                </button>
+                <div id="thought-stream-osiris" class="thought-stream-box !h-24 !p-0 !border-none !bg-transparent">
+                    <p class="p-4">Awaiting thought stream...</p>
+                </div>
+            </div>
+            <div id="web-research-osiris" class="web-research-box hidden relative p-4 border-b border-slate-800">
+                <h4 class="text-xs font-semibold mb-2 uppercase flex items-center gap-2 text-amber-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9V3" /></svg>
+                    Web Research Findings
+                </h4>
+                <button class="expand-btn absolute top-3 right-3" data-content-source="research-content-osiris" data-agent-name="User Stories Expander" data-content-type="Web_Research">
+                    <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg>
+                </button>
+                <div id="research-content-osiris" class="output-box p-2 rounded-md h-24 text-xs prose prose-invert max-w-none"></div>
+            </div>
+            <details id="agentCard-osiris" class="agent-card-details">
+                <summary class="agent-card-summary">
+                     <span class="text-sm">View Output</span>
+                    <svg class="chevron text-slate-500 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </summary>
+                <div class="agent-card-content text-sm">
+                    <div class="flex justify-between items-center mb-2">
+                         <h4 class="font-semibold">Expanded Stories</h4>
+                        <div class="flex gap-2">
+                            <button class="copy-btn" data-target="expanderOutput"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button>
+                            <button class="expand-btn" data-content-source="expanderOutput" data-agent-name="User Stories Expander" data-content-type="Expanded_Stories"><svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg></button>
+                        </div>
+                    </div>
+                    <div id="expanderOutput" class="output-box p-2 rounded-md h-64 text-xs prose prose-invert max-w-none"></div>
+                </div>
+            </details>
+            <div id="refinement-chat-osiris" class="p-4 border-t border-slate-700 hidden">
+    <div id="refinement-history-maat" class="text-xs space-y-2 mb-2 max-h-48 overflow-y-auto pr-2">
+        </div>
+    <div class="flex items-center gap-2">
+        <input type="text" id="refinement-input-maat" class="input-field !text-xs !py-1 flex-grow" placeholder="e.g., Make the first requirement more concise...">
+        <button class="btn btn-secondary !py-1 !px-3 refinement-send-btn" data-agent="maat">Refine</button>
+    </div>
+    <div class="text-right mt-3">
+         <button class="btn btn-success !text-xs !py-1 !px-3 approve-and-continue-btn" data-agent="maat">Approve & Continue</button>
+    </div>
+</div>
+        </div>
+        <!-- Agent Card: Bastet -->
+        <div id="card-bastet" class="card col-span-1 glow-default">
+            <div class="agent-card-header p-4 border-b border-slate-700 relative">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" id="checkbox-bastet" class="agent-checkbox h-5 w-5 rounded bg-slate-700 border-slate-500 text-blue-500 focus:ring-blue-600">
+                        <svg class="w-6 h-6 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 01-2.153.24c-1.119 0-2.235-.34-3.218-.995a5.988 5.988 0 01-2.153-.24c-.482-.174-.711-.703-.59-1.202L18.75 4.971zm-16.5.52c-1.01.143-2.01.317-3 .52m3-.52l-2.62 10.726c-.122.499.106 1.028.589 1.202a5.989 5.989 0 002.153.24c1.119 0 2.235-.34 3.218-.995a5.989 5.989 0 002.153-.24c.482-.174.711-.703.59-1.202L5.25 4.971z" /></svg>
+                        <h3 class="text-lg font-bold"><span class="text-glow">Effort Estimator</span></h3>
+                    </div>
+                    <div id="controls-bastet" class="flex items-center gap-2">
+                        <button class="feedback-btn hidden text-xs bg-slate-600 hover:bg-slate-500 text-white font-semibold py-1 px-3 rounded">Add Feedback</button>
+                        <button class="retry-btn hidden text-xs bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-1 px-3 rounded">Retry</button>
+                    </div>
+                </div>
+            </div>
+            <div class="relative p-4 border-b border-slate-800">
+                <h4 class="text-xs font-semibold mb-2 uppercase">Thought Stream</h4>
+                 <button class="expand-btn absolute top-3 right-3" data-content-source="thought-stream-bastet" data-agent-name="Effort Estimator" data-content-type="Thought_Stream">
+                    <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg>
+                </button>
+                <div id="thought-stream-bastet" class="thought-stream-box !h-24 !p-0 !border-none !bg-transparent">
+                    <p class="p-4">Awaiting thought stream...</p>
+                </div>
+            </div>
+            <details id="agentCard-bastet" class="agent-card-details">
+                <summary class="agent-card-summary">
+                     <span class="text-sm">View Output</span>
+                    <svg class="chevron text-slate-500 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </summary>
+                <div class="agent-card-content text-sm">
+                    <div class="flex justify-between items-center mb-2">
+                         <h4 class="font-semibold">Size Estimates</h4>
+                        <div class="flex gap-2">
+                            <button class="copy-btn" data-target="estimatorOutput"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button>
+                            <button class="expand-btn" data-content-source="estimatorOutput" data-agent-name="Effort Estimator" data-content-type="Estimates"><svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg></button>
+                        </div>
+                    </div>
+                    <div id="estimatorOutput" class="output-box p-2 rounded-md h-64 text-xs prose prose-invert max-w-none"></div>
+                </div>
+            </details>
+            <div id="refinement-chat-bastet" class="p-4 border-t border-slate-700 hidden">
+    <div id="refinement-history-maat" class="text-xs space-y-2 mb-2 max-h-48 overflow-y-auto pr-2">
+        </div>
+    <div class="flex items-center gap-2">
+        <input type="text" id="refinement-input-maat" class="input-field !text-xs !py-1 flex-grow" placeholder="e.g., Make the first requirement more concise...">
+        <button class="btn btn-secondary !py-1 !px-3 refinement-send-btn" data-agent="maat">Refine</button>
+    </div>
+    <div class="text-right mt-3">
+         <button class="btn btn-success !text-xs !py-1 !px-3 approve-and-continue-btn" data-agent="maat">Approve & Continue</button>
+    </div>
+</div>
+        </div>
+        <!-- Agent Card: Anubis -->
+        <div id="card-anubis" class="card col-span-1 glow-default">
+            <div class="agent-card-header p-4 border-b border-slate-700 relative">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" id="checkbox-anubis" class="agent-checkbox h-5 w-5 rounded bg-slate-700 border-slate-500 text-blue-500 focus:ring-blue-600">
+                        <svg class="w-6 h-6 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <h3 class="text-lg font-bold"><span class="text-glow">Test Cases Builder</span></h3>
+                    </div>
+                    <div id="controls-anubis" class="flex items-center gap-2">
+                        <button class="feedback-btn hidden text-xs bg-slate-600 hover:bg-slate-500 text-white font-semibold py-1 px-3 rounded">Add Feedback</button>
+                        <button class="retry-btn hidden text-xs bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-1 px-3 rounded">Retry</button>
+                    </div>
+                </div>
+            </div>
+            <div class="relative p-4 border-b border-slate-800">
+                <h4 class="text-xs font-semibold mb-2 uppercase">Thought Stream</h4>
+                 <button class="expand-btn absolute top-3 right-3" data-content-source="thought-stream-anubis" data-agent-name="Test Cases Builder" data-content-type="Thought_Stream">
+                    <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg>
+                </button>
+                <div id="thought-stream-anubis" class="thought-stream-box !h-24 !p-0 !border-none !bg-transparent">
+                    <p class="p-4">Awaiting thought stream...</p>
+                </div>
+            </div>
+            <details id="agentCard-anubis" class="agent-card-details">
+                <summary class="agent-card-summary">
+                     <span class="text-sm">View Output</span>
+                    <svg class="chevron text-slate-500 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </summary>
+                <div class="agent-card-content text-sm">
+                    <div class="flex justify-between items-center mb-2">
+                         <h4 class="font-semibold">Test Cases</h4>
+                        <div class="flex gap-2">
+                            <button class="copy-btn" data-target="automatorOutput"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button>
+                            <button class="expand-btn" data-content-source="automatorOutput" data-agent-name="Test Cases Builder" data-content-type="Test_Cases"><svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg></button>
+                        </div>
+                    </div>
+                    <div id="automatorOutput" class="output-box p-2 rounded-md h-64 text-xs prose prose-invert max-w-none"></div>
+                </div>
+            </details>
+            <div id="refinement-chat-anubis" class="p-4 border-t border-slate-700 hidden">
+    <div id="refinement-history-maat" class="text-xs space-y-2 mb-2 max-h-48 overflow-y-auto pr-2">
+        </div>
+    <div class="flex items-center gap-2">
+        <input type="text" id="refinement-input-maat" class="input-field !text-xs !py-1 flex-grow" placeholder="e.g., Make the first requirement more concise...">
+        <button class="btn btn-secondary !py-1 !px-3 refinement-send-btn" data-agent="maat">Refine</button>
+    </div>
+    <div class="text-right mt-3">
+         <button class="btn btn-success !text-xs !py-1 !px-3 approve-and-continue-btn" data-agent="maat">Approve & Continue</button>
+    </div>
+</div>
+        </div>
+         <!-- Agent Card: Horus -->
+        <div id="card-horus" class="card col-span-1 glow-default">
+            <div id="agentCard-horus" class="agent-card-details">
+                <div class="agent-card-summary !cursor-default">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-6 h-6 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l7.5-7.5 7.5 7.5m-15 6l7.5-7.5 7.5 7.5" /></svg>
+                        <h3 class="text-lg font-bold"><span class="text-glow">Artifacts Compiler</span></h3>
+                    </div>
+                </div>
+                <div class="relative p-4 border-b border-slate-800">
+                    <h4 class="text-xs font-semibold mb-2 uppercase">Thought Stream</h4>
+                    <button class="expand-btn absolute top-3 right-3" data-content-source="thought-stream-horus" data-agent-name="Artifacts Compiler" data-content-type="Thought_Stream">
+                        <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" /></svg>
+                    </button>
+                    <div id="thought-stream-horus" class="thought-stream-box !h-24 !p-0 !border-none !bg-transparent">
+                        <p class="p-4">Awaiting thought stream...</p>
+                    </div>
+                </div>
+                <div class="agent-card-content flex flex-col justify-center items-center text-center">
+                    <h4 class="font-semibold text-xl mb-2 title-font text-glow">Final Build</h4>
+                    <p class="mb-4 text-sm">Once the pipeline is complete, you can download the build artifacts.</p>
+                    <div id="downloadContainer">
+                        <p class="text-xs">Awaiting pipeline completion...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Timer Card -->
+        <div class="card flex flex-col timer-card">
+             <div class="p-4 border-b border-slate-700">
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <h3 class="text-lg font-bold"><span class="text-glow">Analysis Timer</span></h3>
+                </div>
+            </div>
+            <div class="agent-card-content flex flex-col justify-center items-center text-center flex-grow">
+                <p class="text-sm font-semibold mb-3 text-glow">The current project has been running for...</p>
+                <div id="timerDisplay" class="timer-display">
+                    <span class="timer-digit">0</span>
+                    <span class="timer-digit">0</span>
+                    <span class="timer-digit">0</span>
+                    <span class="timer-digit">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+    const PROMPTS = {
+    seshat: {
+        prompt: (rawDocumentsContent) => `You are an expert document analyst. Your task is to read the following document text and break it down into a series of detailed, self-contained, and semantically relevant chunks. Each chunk should have a concise, descriptive title. Return the output as a JSON array of objects, where each object has a 'title' and a 'content' key.
+
+DOCUMENT TEXT:
+"""
+${rawDocumentsContent}
+"""`
+    },
+    maat: {
+    think: (additionalContext) => `You are a Senior Product Manager and Research Analyst. Your task is to analyze the provided documentation to establish a clear, factual basis for development by following a strict rubric. You have access to web search.
+
+**PRIMARY PROJECT GOAL:** ${AppState.projectGoal || 'Not provided.'}
+
+**WEB SEARCH GUARDRAIL:** Your primary goal is to find factual, technical information. You MUST prioritize official documentation, API references, technical specifications, and developer guides. Avoid high-level articles, opinion pieces, or marketing content unless no technical sources are available. You may ONLY use web search to supplement, clarify, or enrich a requirement, term, or concept that is explicitly mentioned in the source documents. You are FORBIDDEN from introducing new, unsolicited requirements.
+
+**Your current task is ONLY to THINK.** Write down your thought process. When you identify a vague requirement or a technical term, you MUST use web searches to find concrete details and best practices. You MUST format the result within your thoughts using the following strict XML format for EACH search performed:
+<web_research>
+<query>Your precise Google search query</query>
+<source>The full URL of the source you used</source>
+<summary>A concise summary of the key information you found at that source that is relevant to the requirement.</summary>
+</web_research>
+
+**Analysis Rubric:**
+1.  **Goal Alignment:** Start by re-stating the Primary Project Goal.
+2.  **Requirement Extraction & Enrichment:** Go through each document chunk and explicitly list every functional and non-functional requirement. For any requirement that is not 100% self-explanatory (e.g., involves a technology, a standard like 'SEPA', or a subjective term like 'best-in-class'), you MUST perform one or more web searches to find specific, concrete standards or implementation details and cite your sources using the <web_research> format.
+3.  **Requirement Classification & Business Impact:** For each functional requirement, you MUST assign an "Impact Category" from the following list: [ 'Customer Experience', 'Revenue Generation', 'Cost Reduction', 'Operational Efficiency', 'Compliance & Security' ]. Base this on the primary project goal. This classification must be part of your final output.
+4.  **NFR Audit:** You must explicitly search the documents for requirements related to the following categories: **Security**, **Performance** (e.g., response times, load handling), **Scalability** (e.g., user growth), and **Accessibility** (e.g., WCAG standards). If no specific requirements are found for these categories, you MUST list them under the "Identified Gaps & Questions" section as "Unspecified NFRs."
+5.  **Gap & Question Identification:** Identify any ambiguities or missing information.
+6.  **Synthesis:** Briefly summarize your findings.
+
+**Your analysis must be exhaustive for every single item. Under no circumstances should you summarize, abbreviate, or use phrases like 'etc.' or 'and so on'. Generate the full, complete text for your entire thought process.**
+
+**Additional Context from User:**
+${additionalContext || 'None provided.'}`,
+    write: (thought, dependencies, indexedChunks) => `You are a Senior Product Manager. You have already analyzed the context and created a plan.
+**Your current task is ONLY to WRITE the final output.** Based on your thought process below and the original context, produce the final, clean output with two distinct sections: "### Extracted Requirements" and "### Identified Gaps & Questions".
+
+**Strict Requirement Formatting:**
+* **[Impact Category]** - [The full requirement text]
+
+Do not add any other text or explanation.
+
+**Your Thought Process:**
+${thought}
+
+**Original Context:**
+---
+**Indexed Document Chunks:**
+${indexedChunks}
+---`
+    },
+    ptah: {
+        think: (feedback, thoughtStreams) => `You are a Principal Product Owner and UX Specialist. Your goal is to create a backlog of Epics and User Stories by following a strict rubric. You have access to web search.
+
+**WEB SEARCH GUARDRAIL:** Your primary goal is to find data to justify a feature's value. You MUST prioritize technical documentation, case studies, or market research that provides concrete data. Avoid broad, irrelevant searches about a persona's lifestyle. You may ONLY use web search to enrich a user story's persona or justification if it is directly related to a requirement from the previous step. You are FORBIDDEN from creating new user stories for features not supported by the provided requirements.
+
+**Your current task is ONLY to THINK.** Write down your thought process. When you need to enrich a persona or strengthen a justification, you MUST use web searches. You MUST format the result within your thoughts using the following strict XML format for EACH search performed:
+<web_research>
+<query>Your precise Google search query</query>
+<source>The full URL of the source you used</source>
+<summary>A concise summary of the key information you found at that source that is relevant to the user story.</summary>
+</web_research>
+
+**Backlog Creation Rubric:**
+1.  **Feedback Incorporation:** Your thought process **must** begin with a section titled "Addressing Feedback". In this section, you will quote the user's feedback verbatim and then explain, point-by-point, how your subsequent plan has been modified to satisfy it. If the feedback is contradictory or cannot be acted upon, you must explain why.
+2.  **Epic Identification:** Group requirements into logical Epics.
+3.  **User Story Decomposition:** For each Epic, break it down into the smallest possible, valuable user stories.
+    - **Persona Enrichment:** For each persona, you MUST perform web searches to find details about their role to make the "As a..." more specific and empathetic. Cite your sources using the <web_research> format.
+    - **Justification Strengthening:** For each "So that..." clause, you MUST perform web searches to find data or articles that support the value proposition. Cite your sources using the <web_research> format.
+
+**Your analysis must be exhaustive for every single item. Under no circumstances should you summarize, abbreviate, or use phrases like 'etc.' or 'and so on'. Generate the full, complete text for your entire thought process.**
+
+**Relevant Thought Stream from Ma'at (Extractor):**
+${thoughtStreams}
+
+**Feedback on Previous Step (Ma'at):**
+${feedback || 'None provided.'}`,
+        write: (thought, requirements, indexedChunks) => `You are a Principal Product Owner. You have already analyzed the requirements and created a plan.
+**Your current task is ONLY to WRITE the final backlog.** Based on your thought process below and the original context, produce the final hierarchy of Epics and User Stories using the strict Markdown format. Do not add any other text or explanation.
+
+**Strict Output Formatting:**
+# Epic: [Epic Title]
+*Description: [Epic Description]*
+
+## User Story
+**As a** [user persona], **I want to** [action], **So that** [benefit].
+*Justification: [Justification citing requirements, chunks, any identified team dependencies, and **explicitly stating how this story contributes to the overall project goal and its Impact Category**.]*
+---
+**IMPORTANT RULE: The [user persona] MUST be a generic role (e.g., 'Finance Manager', 'Backend Engineer', 'Customer'), NOT a personal name (e.g., 'Helena', 'David').**
+
+**Your Thought Process:**
+${thought}
+
+**Original Context:**
+---
+**Extracted Requirements:**
+${requirements}
+---
+**Indexed Document Chunks:**
+${indexedChunks}
+---`
+    },
+    osiris: {
+        think: (feedback, thoughtStreams) => `You are a Senior Agile Product Owner and former architect. Your goal is to expand User Stories into technically detailed, 'Definition of Ready' artifacts. You have access to web search.
+
+**WEB SEARCH GUARDRAIL:** Your primary goal is to find factual, technical information for implementation. You MUST prioritize official documentation, API references, technical specifications, and developer guides. Avoid high-level articles, opinion pieces, or marketing content unless no technical sources are available. You may ONLY use web search to find technical specifications or implementation best practices for tasks explicitly mentioned in a user story. You are FORBIDDEN from adding new implementation tasks for technologies not mentioned or implied by the user story.
+
+**Your current task is ONLY to THINK.** Write down your thought process. When planning implementation tasks, you MUST use web searches to find technical details for any specific technologies or standards mentioned. You MUST format the result within your thoughts using the following strict XML format for EACH search performed:
+<web_research>
+<query>Your precise Google search query</query>
+<source>The full URL of the source you used</source>
+<summary>A concise summary of the key technical details or best practices you found at that source.</summary>
+</web_research>
+
+**Story Expansion Rubric:**
+1.  **Feedback Incorporation:** Your thought process **must** begin with a section titled "Addressing Feedback". In this section, you will quote the user's feedback verbatim and then explain, point-by-point, how your subsequent plan has been modified to satisfy it. If the feedback is contradictory or cannot be acted upon, you must explain why.
+2.  **Implementation Task Planning:** For each User Story, list the specific, granular technical tasks.
+3.  **Technical Granularity:** When defining implementation tasks, if a task involves a known third-party service (e.g., Stripe, AWS S3) or a common protocol (e.g., OAuth 2.0), you MUST perform a web search to identify and suggest specific API endpoints, libraries, or SDK functions that are likely to be used. For example, instead of "Upload file to storage," suggest "Upload file using AWS S3 SDK's 'PutObject' command."
+4.  **Acceptance Criteria (AC) Design:** Design detailed Gherkin-style acceptance criteria for the happy path, edge cases, and negative paths.
+
+**Your analysis must be exhaustive for every single item. Under no circumstances should you summarize, abbreviate, or use phrases like 'etc.' or 'and so on'. Generate the full, complete text for your entire thought process.**
+
+**Relevant Thought Streams from Ma'at & Ptah:**
+${thoughtStreams}
+
+**Feedback on Previous Step (Ptah):**
+${feedback || 'None provided.'}`,
+        write: (thought, userStories, indexedChunks) => `You are a Senior Agile Product Owner. You have already analyzed the user stories and created a plan.
+**Your current task is ONLY to WRITE the final expanded stories.** Based on your thought process and the original context, produce the final expanded stories with tasks and acceptance criteria using the strict Markdown format. Do not add any other text or explanation.
+
+**Strict Output Formatting:**
+## User Story: [Story Title]
+**Story:** As a [user persona], I want to [action], so that [benefit].
+### Implementation Tasks
+- [ ] **Layer:** [Specific task description]
+### Acceptance Criteria
+1.  **Scenario:** [Scenario description]
+    **Given** [context] **When** [action] **Then** [outcome]
+---
+
+**Your Thought Process:**
+${thought}
+
+**Original Context:**
+---
+**Barebone User Stories:**
+${userStories}
+---
+**Indexed Document Chunks:**
+${indexedChunks}
+---`
+    },
+    bastet: {
+        think: (userStory, storyTitle, feedback, thoughtStreams) => `You are a Senior Agile Coach specializing in backlog estimation. Your goal is to provide a T-shirt size estimate (XS, S, M, L, XL) for a single user story based on a strict rubric. The title of the story is "${storyTitle}".
+
+**Your current task is ONLY to THINK.** Review the single expanded user story provided below. If any feedback on the previous step is available, consider it. Analyze the story against the rubric and write down your reasoning for each category. Do NOT write the final CSV output yet, just your detailed analysis.
+
+**Estimation Rubric:**
+1.  **Task Complexity & Count:**
+    - How many implementation tasks are listed?
+    - Are the tasks straightforward (e.g., simple UI changes) or complex (e.g., new API integrations, complex business logic)?
+2.  **Acceptance Criteria (AC) Analysis:**
+    - How many ACs are there?
+    - Are the ACs simple validation points or do they describe complex, multi-step scenarios?
+3.  **Dependencies & Ambiguity:**
+    - Does the story mention any external team dependencies?
+    - Are there any signs of ambiguity, "to be defined" sections, or potential unknowns that could increase risk and effort?
+4.  **Synthesis & Final Estimate:**
+    - Based on the analysis above, synthesize your findings and decide on a final T-shirt size. Justify your choice by summarizing the key factors.
+
+**Relevant Thought Stream from Osiris (Expander):**
+${thoughtStreams}
+
+**Feedback on Previous Step (Osiris):**
+${feedback || 'None provided.'}
+
+**Expanded User Story to Analyze:**
+---
+${userStory}
+---`,
+        write: (thought, storyTitle) => `You are a Senior Agile Coach. You have already analyzed a user story and planned your estimation based on a detailed thought process. The title of the story is "${storyTitle}".
+**Your current task is ONLY to WRITE the final estimation.** Based on your thought process below, use the provided User Story Title, and extract your final T-Shirt Size and Justification. Produce the output as a single line of a CSV, without a header.
+
+**Strict Output Formatting:**
+"${storyTitle}","The Size from your analysis","The Justification from your analysis"
+
+**Your Thought Process:**
+---
+${thought}
+---`
+    },
+    anubis: {
+    think: (feedback, thoughtStreams) => `You are a Lead QA Automation Engineer. Your goal is to design a Gherkin test plan by following a strict rubric.
+**Your current task is ONLY to THINK.** Analyze the expanded stories and their acceptance criteria. Incorporate the user's feedback on the previous step. Do NOT write the final Gherkin file yet, just your plan.
+
+**Test Plan Rubric:**
+1.  **Feedback Incorporation:** Your thought process **must** begin with a section titled "Addressing Feedback". In this section, you will quote the user's feedback verbatim and then explain, point-by-point, how your subsequent plan has been modified to satisfy it. If the feedback is contradictory or cannot be acted upon, you must explain why.
+2.  **Feature File Structure:** Define the overall \`.feature\` file name and its high-level description. Will you need a Background section for common Given steps?
+3.  **Scenario Design:** For each User Story's Acceptance Criteria, plan the specific Gherkin Scenarios you will write. You must cover every AC. For each scenario, decide on an appropriate tag (e.g., @Smoke, @Regression, @HappyPath).
+4.  **Test Data Specification:** For each Scenario you plan, you MUST also define the prerequisite test data needed to execute it (e.g., specific user accounts, product IDs, invalid inputs).
+
+**Your analysis must be exhaustive for every single item. Under no circumstances should you summarize, abbreviate, or use phrases like 'etc.' or 'and so on'. Generate the full, complete text for your entire thought process.**
+
+**Relevant Thought Stream from Osiris (Expander):**
+${thoughtStreams}
+
+**Feedback on Previous Step (Bastet):**
+${feedback || 'None provided.'}`,
+    write: (thought, expandedStories) => `You are a Lead QA Automation Engineer. You have already planned your test strategy.
+**Your current task is ONLY to WRITE the final Gherkin test plan.** Based on your thought process, produce the complete and valid Gherkin \`.feature\` file. Do not add any other text or explanation.
+
+**Strict Output Formatting:**
+@Story-Tag
+Feature: [Feature Name]
+  Background:
+    Given ...
+  @TestType
+  Scenario: [Scenario Name]
+    * Test Data:
+        * [Prerequisite data point 1]
+        * [Prerequisite data point 2]
+    Given ...
+    When ...
+    Then ...
+
+**Your Thought Process:**
+${thought}
+
+**Original Context:**
+---
+**Expanded User Stories:**
+${expandedStories}
+---`
+},
+    horus: {
+        think: (feedback) => `You are a senior Technical Program Manager. Your goal is to consolidate all project artifacts into a final build package of four CSV files.
+**Your current task is ONLY to THINK.** Review all the inputs: the user stories, gaps, estimations, and test cases, along with any final user feedback. Plan how you will parse each of these inputs and correctly format them into the four distinct CSV structures required for the final output. Do NOT write the final CSVs yet, just your plan. **Your analysis must be exhaustive for every single item. Under no circumstances should you summarize, abbreviate, or use phrases like 'etc.' or 'and so on'. Generate the full, complete text for your entire thought process.**
+
+**Feedback on Previous Step (Anubis):**
+${feedback || 'None provided.'}`,
+        write: (thought, userStories, gaps, estimations, testCases) => `You are a senior Technical Program Manager. You have already planned the final build.
+**Your current task is ONLY to WRITE the final build package.** Based on your thought process and the original inputs, produce the final text containing the four specified CSV sections, each separated by \`---[END OF SECTION]---\`. Do not add any other text or explanation.
+
+**Strict Output Formatting:**
+## USER_STORIES_CSV
+"Epic","Story ID","User Story","Implementation Tasks","Acceptance Criteria"
+...
+---[END OF SECTION]---
+## GAPS_AND_QUESTIONS_CSV
+"ID","Type","Description","Status","Owner"
+...
+---[END OF SECTION]---
+## ESTIMATIONS_CSV
+"User Story Title","T-Shirt Size","Justification"
+...
+---[END OF SECTION]---
+## TEST_CASES_CSV
+"Feature","Scenario ID","Test Type(s)","Steps"
+...
+
+**Your Thought Process:**
+${thought}
+
+**Original Inputs:**
+---
+User Stories: ${userStories}
+---
+Gaps: ${gaps}
+---
+Estimations: ${estimations}
+---
+Test Cases: ${testCases}
+---`
+    }
+};
+
+    // --- DOM Elements ---
+    const apiKeyModal = document.getElementById('apiKeyModal');
+    const openModalButton = document.getElementById('openModalButton');
+    const closeModalButton = document.getElementById('closeModalButton');
+    const saveApiKeyButton = document.getElementById('saveApiKeyButton');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    const projectNameInput = document.getElementById('projectName');
+    const additionalContextInput = document.getElementById('additionalContext');
+    const startIndexButton = document.getElementById('startIndexButton');
+    const downloadContainer = document.getElementById('downloadContainer');
+    const thothChatHistory = document.getElementById('thothChatHistory');
+    const thothInput = document.getElementById('thothInput');
+    const thothSendButton = document.getElementById('thothSendButton');
+    const thothAttachmentButton = document.getElementById('thothAttachmentButton');
+    const thothAttachmentsContainer = document.getElementById('thothAttachmentsContainer');
+    const thothFileInput = document.getElementById('thothFileInput');
+    const forgeContent = document.getElementById('forgeContent');
+    const runFullAnalysisButton = document.getElementById('runFullAnalysisButton');
+    const runStepAnalysisButton = document.getElementById('runStepAnalysisButton');
+    const runManualAgentsButton = document.getElementById('runManualAgentsButton');
+    const stopAnalysisButton = document.getElementById('stopAnalysisButton');
+    const fullscreenModal = document.getElementById('fullscreenModal');
+    const modalContent = document.getElementById('modalContent');
+    const modalCloseButton = document.getElementById('modalCloseButton');
+    const modalDownloadButton = document.getElementById('modalDownloadButton');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerLabel = document.querySelector('.timer-card p');
+    const themeToggle = document.getElementById('themeToggle');
+    const faqModal = document.getElementById('faqModal');
+    const openFaqButton = document.getElementById('openFaqButton');
+    const closeFaqModalButton = document.getElementById('closeFaqModalButton');
+    const projectGoalModal = document.getElementById('projectGoalModal');
+    const saveProjectGoalButton = document.getElementById('saveProjectGoalButton');
+    const ultraThinkToggle = document.getElementById('ultraThinkToggle');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalChatContainer = document.getElementById('modalChatContainer');
+    const modalThothInput = document.getElementById('modalThothInput');
+    const modalThothSendButton = document.getElementById('modalThothSendButton');
+   
+    const agentElements = {
+        seshat: { progress: document.getElementById('progress-seshat'), out: document.getElementById('indexerOutput'), thoughtStream: null },
+        maat: { out: document.getElementById('extractorOutput'), gaps: document.getElementById('gapsOutput'), progress: document.getElementById('progress-maat'), thoughtStream: document.getElementById('thought-stream-maat'), checkbox: document.getElementById('checkbox-maat') },
+        ptah: { out: document.getElementById('analyzerOutput'), progress: document.getElementById('progress-ptah'), thoughtStream: document.getElementById('thought-stream-ptah'), checkbox: document.getElementById('checkbox-ptah') },
+        osiris: { out: document.getElementById('expanderOutput'), progress: document.getElementById('progress-osiris'), thoughtStream: document.getElementById('thought-stream-osiris'), checkbox: document.getElementById('checkbox-osiris') },
+        bastet: { out: document.getElementById('estimatorOutput'), progress: document.getElementById('progress-bastet'), thoughtStream: document.getElementById('thought-stream-bastet'), checkbox: document.getElementById('checkbox-bastet') },
+        anubis: { out: document.getElementById('automatorOutput'), progress: document.getElementById('progress-anubis'), thoughtStream: document.getElementById('thought-stream-anubis'), checkbox: document.getElementById('checkbox-anubis') },
+        horus: { out: document.getElementById('downloadContainer'), progress: document.getElementById('progress-horus'), thoughtStream: document.getElementById('thought-stream-horus') }
+    };
+
+    function updateThothState(isEnabled) {
+        thothInput.disabled = !isEnabled;
+        thothSendButton.disabled = !isEnabled;
+        thothAttachmentButton.disabled = !isEnabled;
+    }
+
+    let currentAudio = null;
+
+    function pcmToWav(pcmData, sampleRate) {
+        const numChannels = 1;
+        const bytesPerSample = 2;
+        const blockAlign = numChannels * bytesPerSample;
+        const byteRate = sampleRate * blockAlign;
+        const dataSize = pcmData.length * bytesPerSample;
+        const buffer = new ArrayBuffer(44 + dataSize);
+        const view = new DataView(buffer);
+        view.setUint32(0, 0x52494646, false);
+        view.setUint32(4, 36 + dataSize, true);
+        view.setUint32(8, 0x57415645, false);
+        view.setUint32(12, 0x666d7420, false);
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, byteRate, true);
+        view.setUint16(32, blockAlign, true);
+        view.setUint16(34, bytesPerSample * 8, true);
+        view.setUint32(36, 0x64617461, false);
+        view.setUint32(40, dataSize, true);
+        for (let i = 0; i < pcmData.length; i++) {
+            view.setInt16(44 + i * 2, pcmData[i], true);
+        }
+        return new Blob([view], { type: 'audio/wav' });
+    }
+
+    function base64ToArrayBuffer(base64) {
+        const binaryString = window.atob(base64);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes.buffer;
+    }
+
+    async function speakText(textToSpeak, buttonElement) {
+        const apiKey = getApiKey();
+        if (!apiKey) {
+            showErrorPopup('API Key is required for Text-to-Speech.');
+            return;
+        }
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio = null;
+        }
+        const originalIcon = buttonElement.innerHTML;
+        buttonElement.innerHTML = `<div class="loader !w-3 !h-3 !border-2 !border-t-transparent"></div>`;
+        buttonElement.disabled = true;
+        try {
+            const cleanText = textToSpeak.replace(/(\*|_|`|#)/g, '');
+            const payload = {
+                contents: [{ parts: [{ text: cleanText }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: "Achird" }
+                        }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                const errorBody = await response.json();
+                throw new Error(`TTS API Error: ${errorBody.error.message}`);
+            }
+            const result = await response.json();
+            const part = result?.candidates?.[0]?.content?.parts?.[0];
+            const audioData = part?.inlineData?.data;
+            const mimeType = part?.inlineData?.mimeType;
+            if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+                const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1], 10) : 24000;
+                const pcmBuffer = base64ToArrayBuffer(audioData);
+                const pcm16 = new Int16Array(pcmBuffer);
+                const wavBlob = pcmToWav(pcm16, sampleRate);
+                const audioUrl = URL.createObjectURL(wavBlob);
+                currentAudio = new Audio(audioUrl);
+                currentAudio.play();
+                currentAudio.onended = () => {
+                    URL.revokeObjectURL(audioUrl);
+                    currentAudio = null;
+                };
+            } else {
+                throw new Error("Invalid audio data received from API.");
+            }
+        } catch (error) {
+            console.error("Error in speakText:", error);
+            showErrorPopup(error.message);
+        } finally {
+            buttonElement.innerHTML = originalIcon;
+            buttonElement.disabled = false;
+        }
+    }
+
+    thothAttachmentButton.addEventListener('click', () => {
+        thothFileInput.click();
+    });
+
+    thothFileInput.addEventListener('change', (e) => {
+        handleThothFileUploads(e.target.files);
+        e.target.value = '';
+    });
+
+    async function handleThothFileUploads(files) {
+        const fileProcessingPromises = Array.from(files).map(async (file) => {
+            const mimeType = file.type;
+            if (mimeType.startsWith('image/')) {
+                const data = await readFileAsDataURL(file);
+                return { name: file.name, mimeType, data: data.split(',')[1] };
+            } else if (mimeType === 'application/pdf') {
+                const text = await extractTextFromPdf(file);
+                return { name: file.name, type: 'text', content: text };
+            } else {
+                const text = await file.text();
+                return { name: file.name, type: 'text', content: text };
+            }
+        });
+        try {
+            const processedFiles = await Promise.all(fileProcessingPromises);
+            AppState.thothAttachments.push(...processedFiles);
+            updateThothAttachmentsUI();
+        } catch (error) {
+            showErrorPopup('Error processing attachment.');
+            console.error(error);
+        }
+    }
+
+    function updateThothAttachmentsUI() {
+        thothAttachmentsContainer.innerHTML = '';
+        AppState.thothAttachments.forEach((file, index) => {
+            const tag = document.createElement('div');
+            tag.className = 'bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-2';
+            tag.innerHTML = `
+                <span>${file.name}</span>
+                <button data-index="${index}" class="remove-attachment-btn text-blue-200 hover:text-white font-bold">&times;</button>
+            `;
+            thothAttachmentsContainer.appendChild(tag);
+        });
+    }
+
+    thothAttachmentsContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-attachment-btn')) {
+            const index = parseInt(e.target.dataset.index, 10);
+            AppState.thothAttachments.splice(index, 1);
+            updateThothAttachmentsUI();
+        }
+    });
+
+    function clearThothAttachments() {
+        AppState.thothAttachments = [];
+        updateThothAttachmentsUI();
+    }
+
+    const AppState = {
+        isUltraThinkEnabled: true, apiKey: '', files: [], documentsContent: "", projectName: '',
+        additionalContext: '', projectGoal: '',        
+        thothAttachments: [], pendingAnalysisMode: null, documentEmbeddings: [],
+        indexedChunksText: null, isIndexingComplete: false, activeMode: 'none',
+        stopRequested: false, isRunInProgress: false, currentStep: 'idle',
+        timer: { interval: null, secondsElapsed: 0, isRunning: false },
+        modal: { content: '', filename: '' },
+        agentOutputs: { seshat: '', maat_requirements: '', maat_gaps: '', ptah: '', osiris: '', bastet: '', anubis: '', horus: '' },
+        agentFeedback: { maat: '', ptah: '', osiris: '', bastet: '', anubis: '' },
+        thoughtStreams: { maat: '', ptah: '', osiris: '', bastet: '', anubis: '', horus: '' },
+        refinementHistory: { maat: [], ptah: [], osiris: [], bastet: [], anubis: [] },
+        agentUiStates: {
+            seshat: { status: 'idle', error: null },
+            maat: { status: 'idle', error: null, feedbackSubmitted: false, checked: false },
+            ptah: { status: 'idle', error: null, feedbackSubmitted: false, checked: false },
+            osiris: { status: 'idle', error: null, feedbackSubmitted: false, checked: false },
+            bastet: { status: 'idle', error: null, feedbackSubmitted: false, checked: false },
+            anubis: { status: 'idle', error: null, feedbackSubmitted: false, checked: false },
+            horus: { status: 'idle', error: null, feedbackSubmitted: false }
+        }
+    };
+    const MAX_FILES = 20;
+    const AGENT_PIPELINE = ['maat', 'ptah', 'osiris', 'bastet', 'anubis', 'horus'];
+    const SELECTABLE_AGENTS = ['maat', 'ptah', 'osiris', 'bastet', 'anubis'];
+
+    function saveState() {
+        const stateToSave = { ...AppState };
+        delete stateToSave.files;
+        const replacer = (key, value) => {
+            if (value instanceof Set) return { _type: 'set', value: [...value] };
+            return value;
+        };
+        const stateString = JSON.stringify(stateToSave, replacer);
+        localStorage.setItem('scarabAppState', stateString);
+    }
+
+    function loadState() {
+        const stateString = localStorage.getItem('scarabAppState');
+        if (stateString) {
+            try {
+                const reviver = (key, value) => {
+                    if (value && value._type === 'set') return new Set(value.value);
+                    return value;
+                };
+                const savedState = JSON.parse(stateString, reviver);
+                Object.assign(AppState, {
+                    ...savedState,
+                    timer: { interval: null, secondsElapsed: savedState.timer?.secondsElapsed || 0, isRunning: false },
+                    isRunInProgress: false,
+                    stopRequested: false,
+                });
+                console.log("Application state restored.");
+            } catch (e) {
+                console.error("Failed to parse saved state.", e);
+                localStorage.removeItem('scarabAppState');
+            }
+        }
+    }
+
+    const getApiKey = () => AppState.apiKey || localStorage.getItem('geminiApiKey') || '';
+   
+    openModalButton.addEventListener('click', () => apiKeyModal.classList.remove('hidden'));
+    closeModalButton.addEventListener('click', () => apiKeyModal.classList.add('hidden'));
+    saveApiKeyButton.addEventListener('click', () => {
+        AppState.apiKey = apiKeyInput.value;
+        localStorage.setItem('geminiApiKey', AppState.apiKey);
+        saveState();
+        apiKeyModal.classList.add('hidden');
+    });
+    apiKeyModal.addEventListener('click', (e) => {
+        if (e.target === apiKeyModal) apiKeyModal.classList.add('hidden');
+    });
+   
+    openFaqButton.addEventListener('click', () => faqModal.classList.remove('hidden'));
+    closeFaqModalButton.addEventListener('click', () => faqModal.classList.add('hidden'));
+    faqModal.addEventListener('click', (e) => {
+        if (e.target === faqModal) faqModal.classList.add('hidden');
+    });
+   
+    saveProjectGoalButton.addEventListener('click', () => {
+        const projectGoal = document.getElementById('projectGoalInput').value.trim();
+        if (!projectGoal) {
+            showErrorPopup('Please provide a primary project goal to continue.');
+            return;
+        }
+        AppState.projectGoal = projectGoal;
+        projectGoalModal.classList.add('hidden');
+        saveState();
+        if (AppState.pendingAnalysisMode) {
+            startAnalysis(AppState.pendingAnalysisMode);
+            AppState.pendingAnalysisMode = null;
+        }
+    });
+
+    projectNameInput.addEventListener('input', (e) => {
+        AppState.projectName = e.target.value.trim();
+        saveState();
+    });
+    additionalContextInput.addEventListener('input', (e) => {
+        AppState.additionalContext = e.target.value;
+        saveState();
+    });
+
+    fileUploadArea.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        fileUploadArea.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
+    });
+    fileUploadArea.addEventListener('dragenter', () => fileUploadArea.classList.add('dragover'));
+    fileUploadArea.addEventListener('dragleave', () => fileUploadArea.classList.remove('dragover'));
+    fileUploadArea.addEventListener('drop', (e) => {
+        fileUploadArea.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    async function handleFiles(newFiles) {
+        if (AppState.files.length + newFiles.length > MAX_FILES) {
+            showErrorPopup(`You can upload a maximum of ${MAX_FILES} files.`);
+            return;
+        }
+        const fileProcessingPromises = Array.from(newFiles)
+            .filter(newFile => !AppState.files.some(existingFile => existingFile.name === newFile.name))
+            .map(async (file) => {
+                const mimeType = file.type;
+                if (mimeType.startsWith('image/')) {
+                    const data = await readFileAsDataURL(file);
+                    const imageData = data.split(',')[1];
+                    return { name: file.name, type: 'image', mimeType: mimeType, data: imageData };
+                } else if (mimeType.startsWith('audio/')) {
+                    const data = await readFileAsDataURL(file);
+                    return { name: file.name, type: 'audio', mimeType: mimeType, data: data.split(',')[1] };
+                } else if (mimeType === 'application/pdf') {
+                    const text = await extractTextFromPdf(file);
+                    return { name: file.name, type: 'text', mimeType: 'text/plain', data: text };
+                } else {
+                    const text = await file.text();
+                    return { name: file.name, type: 'text', mimeType: 'text/plain', data: text };
+                }
+            });
+        try {
+            const newlyProcessedFiles = await Promise.all(fileProcessingPromises);
+            AppState.files.push(...newlyProcessedFiles);
+            updateFileList();
+        } catch (error) {
+            showErrorPopup('Error processing files.');
+            console.error(error);
+        }
+        AppState.indexedChunksText = null;
+        AppState.isIndexingComplete = false;
+        updateExecutionButtonStates();
+        startIndexButton.textContent = 'Index Documents';
+        startIndexButton.disabled = AppState.files.length === 0;
+        updateThothState(false);
+        thothChatHistory.innerHTML = `<div class="flex justify-start"><div class="chat-bubble chat-bubble-agent"><p>New documents added. Please re-index to update the context.</p></div></div>`;
+        clearThothAttachments();
+        saveState();
+    }
+   
+    function removeFile(fileNameToRemove) {
+        AppState.files = AppState.files.filter(file => file.name !== fileNameToRemove);
+        updateFileList();
+        AppState.indexedChunksText = null;
+        AppState.isIndexingComplete = false;
+        updateExecutionButtonStates();
+        startIndexButton.textContent = 'Index Documents';
+        startIndexButton.disabled = AppState.files.length === 0;
+        updateThothState(false);
+        thothChatHistory.innerHTML = `<div class="flex justify-start"><div class="chat-bubble chat-bubble-agent"><p>Document removed. Please re-index to update the context.</p></div></div>`;
+        clearThothAttachments();
+        saveState();
+    }
+
+    function updateFileList() {
+        fileList.innerHTML = '';
+        if (AppState.files.length > 0) {
+            AppState.files.forEach((file) => {
+                const fileElement = document.createElement('div');
+                fileElement.className = 'file-list-item flex justify-between items-center p-2 rounded-md text-sm';
+                const fileInfoContainer = document.createElement('div');
+                fileInfoContainer.className = 'flex items-center gap-2 overflow-hidden';
+                const icon = document.createElement('div');
+                if (file.originalType === 'image') {
+                    icon.innerHTML = `<svg class="w-6 h-6 file-list-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>`;
+                } else {
+                    icon.innerHTML = `<svg class="w-6 h-6 file-list-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12m-6.75-4.5h12.75" /></svg>`;
+                }
+                fileInfoContainer.appendChild(icon);
+                const fileNameSpan = document.createElement('span');
+                fileNameSpan.className = 'truncate pr-2 file-list-text';
+                fileNameSpan.textContent = file.name;
+                fileInfoContainer.appendChild(fileNameSpan);
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'file-list-remove-btn text-slate-400 hover:text-white font-bold text-lg px-2 flex-shrink-0';
+                removeBtn.innerHTML = '&times;';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removeFile(file.name);
+                };
+                fileElement.appendChild(fileInfoContainer);
+                fileElement.appendChild(removeBtn);
+                fileList.appendChild(fileElement);
+            });
+        }
+        updateProcessButtonState();
+    }
+   
+    function updateProcessButtonState() {
+        startIndexButton.disabled = AppState.files.length === 0;
+    }
+
+    function updateAgentProgress(agentName, status) {
+        const card = document.getElementById(`card-${agentName}`);
+        if (!card) return;
+        card.classList.remove('glow-default', 'glow-running', 'glow-complete', 'glow-error');
+        switch (status) {
+            case 'running': card.classList.add('glow-running'); break;
+            case 'complete': card.classList.add('glow-complete'); break;
+            case 'error': card.classList.add('glow-error'); break;
+            default: card.classList.add('glow-default'); break;
+        }
+    }
+
+    function resetAgentOutputs() {
+        AppState.isFullAnalysisComplete = false;
+        Object.keys(agentElements).forEach(key => {
+            const el = agentElements[key];
+            if (el.out && key !== 'horus') el.out.innerHTML = `<p class="text-slate-400">Awaiting analysis...</p>`;
+            if (el.gaps) el.gaps.innerHTML = `<p class="text-slate-400">Awaiting analysis...</p>`;
+            if (key === 'seshat') document.getElementById('indexerOutput').innerHTML = `<p class="text-slate-400">Document chunks will appear here.</p>`;
+            if (key === 'horus') el.out.innerHTML = `<p class="text-slate-500 text-xs">Awaiting pipeline completion...</p>`;
+            if (el.thoughtStream) el.thoughtStream.innerHTML = '<p class="text-slate-500 p-4">Awaiting thought stream...</p>';
+            const researchBox = document.getElementById(`web-research-${key}`);
+            if(researchBox) {
+                researchBox.classList.add('hidden');
+                const researchContent = document.getElementById(`research-content-${key}`);
+                if (researchContent) {
+                    researchContent.innerHTML = '';
+                }
+            }
+            const cardDetails = document.getElementById(`agentCard-${key}`);
+            if(cardDetails && cardDetails.tagName === 'DETAILS') cardDetails.open = false;
+            const card = document.getElementById(`card-${key}`);
+            if (card) {
+                card.classList.remove('glow-running', 'glow-complete', 'glow-error');
+                card.classList.add('glow-default');
+            }
+            if (AppState.agentUiStates[key]) AppState.agentUiStates[key] = { ...AppState.agentUiStates[key], status: 'idle', error: null, feedbackSubmitted: false };
+        });
+        updateAllAgentUIs();
+    }
+
+    function dotProduct(vecA, vecB) {
+        let product = 0;
+        for (let i = 0; i < vecA.length; i++) {
+            product += vecA[i] * vecB[i];
+        }
+        return product;
+    }
+
+    function magnitude(vec) {
+        let sum = 0;
+        for (let i = 0; i < vec.length; i++) {
+            sum += vec[i] * vec[i];
+        }
+        return Math.sqrt(sum);
+    }
+
+    function cosineSimilarity(vecA, vecB) {
+        if (!vecA || !vecB) return 0;
+        return dotProduct(vecA, vecB) / (magnitude(vecA) * magnitude(vecB));
+    }
+
+    async function generateImageDescription(apiKey, mimeType, imageData) {
+        const model = 'gemini-2.5-flash';
+        const prompt = "Provide a detailed, semantic description of the following image. If it contains UI elements, user flows, diagrams, or text, describe them in detail as you would for a product manager or developer to understand its purpose and content. Focus on facts and structure.";
+        const payload = {
+            contents: [{
+                parts: [
+                    { text: prompt },
+                    { inlineData: { mimeType: mimeType, data: imageData } }
+                ]
+            }]
+        };
+        try {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                const errorBody = await response.json();
+                throw new Error(`API request failed: ${errorBody.error.message}`);
+            }
+            const result = await response.json();
+            const description = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!description) {
+                throw new Error("Could not extract a description from the API response.");
+            }
+            return description;
+        } catch (error) {
+            console.error("Error generating image description:", error);
+            showErrorPopup(`Failed to describe image: ${error.message}`);
+            return "Error: Could not generate a description for this image.";
+        }
+    }
+
+    async function extractTextFromPdf(file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+        let text = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            text += content.items.map(item => item.str).join(' ');
+        }
+        return text;
+    }
+
+    async function callEmbeddingsApi(apiKey, contents, taskType) {
+        const model = 'gemini-embedding-001';
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:batchEmbedContents?key=${apiKey}`;
+        const requests = contents.map(content => ({
+            model: `models/${model}`,
+            content: { parts: [{ text: content }] },
+            taskType: taskType
+        }));
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requests })
+        });
+        if (!response.ok) {
+            throw new Error(`Embeddings API request failed: ${await response.text()}`);
+        }
+        return await response.json();
+    }
+
+    async function retrieveRelevantContext(query, topK = 5) {
+        if (AppState.documentEmbeddings.length === 0) return "No documents have been embedded yet.";
+        const apiKey = getApiKey();
+        const queryEmbeddingResponse = await callEmbeddingsApi(apiKey, [query], 'RETRIEVAL_QUERY');
+        const queryEmbedding = queryEmbeddingResponse.embeddings[0].values;
+        const similarities = AppState.documentEmbeddings.map((doc, index) => ({
+            index: index,
+            similarity: cosineSimilarity(queryEmbedding, doc.embedding)
+        }));
+        similarities.sort((a, b) => b.similarity - a.similarity);
+        const relevantChunks = similarities.slice(0, topK).map(item => {
+            return AppState.documentEmbeddings[item.index].chunk;
+        });
+        return relevantChunks.join('\n\n---\n\n');
+    }
+
+    async function handleRefinement(agentName) {
+        const inputElement = document.getElementById(`refinement-input-${agentName}`);
+        const historyElement = document.getElementById(`refinement-history-${agentName}`);
+        const userMessage = inputElement.value.trim();
+        if (!userMessage) return;
+        inputElement.value = '';
+        inputElement.disabled = true;
+        const userBubble = document.createElement('div');
+        userBubble.className = 'text-right text-blue-300';
+        userBubble.textContent = `You: ${userMessage}`;
+        historyElement.appendChild(userBubble);
+        AppState.refinementHistory[agentName].push({ role: 'user', content: userMessage });
+        try {
+            const previousOutput = AppState.agentOutputs[agentName] || (agentName === 'maat' ? AppState.agentOutputs.maat_requirements : '');
+            const conversation = AppState.refinementHistory[agentName].map(msg => `${msg.role}: ${msg.content}`).join('\n');
+            const refinementPrompt = `You are an expert agent tasked with refining an existing document based on user feedback.
+---START ORIGINAL DOCUMENT---
+${previousOutput}
+---END ORIGINAL DOCUMENT---
+
+---START CONVERSATION HISTORY---
+${conversation}
+---END CONVERSATION HISTORY---
+
+Your task is to apply the latest user request to the original document. You MUST return the complete, modified document. Do not omit any sections. Do not add conversational text or apologies.`;
+            const apiKey = getApiKey();
+            const model = 'gemini-2.5-pro';
+            const payload = createPayload(refinementPrompt);
+            const result = await callStreamingApi(apiKey, payload, agentElements[agentName].out, model, false);
+            const newContent = result.text;
+            if (agentName === 'maat') {
+                const { requirementsText, gapsText } = displayExtractorOutput(newContent);
+                AppState.agentOutputs.maat_requirements = requirementsText;
+                AppState.agentOutputs.maat_gaps = gapsText;
+            } else {
+                AppState.agentOutputs[agentName] = newContent;
+            }
+            saveState();
+            AppState.refinementHistory[agentName].push({ role: 'agent', content: '[Updated artifact above]' });
+            const agentBubble = document.createElement('div');
+            agentBubble.className = 'text-left text-green-300';
+            agentBubble.textContent = `Agent: I have updated the artifact above with your changes.`;
+            historyElement.appendChild(agentBubble);
+            historyElement.scrollTop = historyElement.scrollHeight;
+        } catch (error) {
+            console.error(`Refinement error for ${agentName}:`, error);
+            showErrorPopup(`Failed to apply refinement: ${error.message}`);
+        } finally {
+            inputElement.disabled = false;
+            inputElement.focus();
+        }
+    }
+
+    function showErrorPopup(message) {
+        const popup = document.getElementById('errorPopup');
+        popup.textContent = message;
+        popup.classList.remove('hidden', 'opacity-0');
+        setTimeout(() => popup.classList.add('opacity-0'), 3000);
+        setTimeout(() => popup.classList.add('hidden'), 3300);
+    }
+   
+    async function startIndexing() {
+        const apiKey = getApiKey();
+        if (!apiKey || AppState.files.length === 0) {
+            showErrorPopup(!apiKey ? 'API Key is required.' : 'Please upload documents.');
+            return;
+        }
+        setLoadingState(true, startIndexButton, 'Indexing...');
+        resetAgentOutputs();
+        AppState.agentUiStates.seshat.status = 'running';
+        updateAgentProgress('seshat', 'running');
+        AppState.documentEmbeddings = [];
+        try {
+            const filesToProcess = [...AppState.files];
+            for (let i = 0; i < filesToProcess.length; i++) {
+                const file = filesToProcess[i];
+                if (file.type === 'image') {
+                    setLoadingState(true, startIndexButton, `Describing ${file.name}...`);
+                    const description = await generateImageDescription(apiKey, file.mimeType, file.data);
+                    AppState.files[i].data = description;
+                    AppState.files[i].type = 'text';
+                    AppState.files[i].originalType = 'image';
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+            setLoadingState(true, startIndexButton, 'Chunking Documents...');
+            const apiParts = AppState.files.map(file => {
+                if (file.type === 'text') {
+                    return { text: `--- DOCUMENT: ${file.name} ---\n\n${file.data}` };
+                }
+                return { inlineData: { mimeType: file.mimeType, data: file.data } };
+            });
+            const chunksText = await runSeshatAgent(apiKey, apiParts);
+            if (!chunksText) throw new Error("Seshat (Indexer) failed to produce chunks.");
+            const chunksArray = chunksText.split('\n\n---\n\n');
+            const BATCH_SIZE = 100;
+            const totalBatches = Math.ceil(chunksArray.length / BATCH_SIZE);
+            for (let i = 0; i < chunksArray.length; i += BATCH_SIZE) {
+                const batchNumber = (i / BATCH_SIZE) + 1;
+                setLoadingState(true, startIndexButton, `Embedding Batch ${batchNumber} of ${totalBatches}...`);
+                const batch = chunksArray.slice(i, i + BATCH_SIZE);
+                const response = await callEmbeddingsApi(apiKey, batch, 'RETRIEVAL_DOCUMENT');
+                const embeddings = response.embeddings.map(e => e.values);
+                for (let j = 0; j < batch.length; j++) {
+                    AppState.documentEmbeddings.push({
+                        chunk: batch[j],
+                        embedding: embeddings[j]
+                    });
+                }
+                if (totalBatches > 1 && batchNumber < totalBatches) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+            AppState.indexedChunksText = chunksText;
+            AppState.isIndexingComplete = true;
+            AppState.agentUiStates.seshat.status = 'complete';
+            updateAgentProgress('seshat', 'complete');
+            updateExecutionButtonStates();
+            updateThothState(true);
+            thothChatHistory.innerHTML = `<div class="flex justify-start"><div class="chat-bubble chat-bubble-agent"><p>Documents indexed & embedded. You can now chat or run the Forge.</p></div></div>`;
+            startIndexButton.textContent = 'Documents Indexed';
+            startIndexButton.disabled = true;
+        } catch (error) {
+            console.error(error);
+            showErrorPopup(`Indexing error: ${error.message}`);
+            AppState.agentUiStates.seshat.status = 'error';
+            updateAgentProgress('seshat', 'error');
+        } finally {
+            setLoadingState(false, startIndexButton, 'Index Documents');
+            saveState();
+        }
+    }
+
+    async function startAnalysis(mode) {
+        if (!AppState.projectGoal) {
+            AppState.pendingAnalysisMode = mode;
+            projectGoalModal.classList.remove('hidden');
+            document.getElementById('projectGoalInput').focus();
+            return;
+        }
+        if (AppState.isRunInProgress) return;
+        AppState.activeMode = mode;
+        AppState.isRunInProgress = true;
+        AppState.stopRequested = false;
+        if (!AppState.isIndexingComplete) {
+            showErrorPopup('Please index documents first.');
+            AppState.isRunInProgress = false;
+            return;
+        }
+        updateExecutionButtonStates();
+        stopAnalysisButton.classList.remove('hidden');
+        startTimer(mode === 'full' || mode === 'manual');
+        const pipelineToRun = (mode === 'manual')
+            ? AGENT_PIPELINE.filter(agent => AppState.agentUiStates[agent]?.checked)
+            : AGENT_PIPELINE;
+        if (mode === 'manual' && pipelineToRun.length === 0) {
+            showErrorPopup('Please select at least one agent to run.');
+            stopAnalysis();
+            return;
+        }
+        AppState.currentStep = pipelineToRun[0] || 'maat';
+        for (const agentName of pipelineToRun) {
+            if (AppState.stopRequested) {
+                showErrorPopup("Analysis stopped by user.");
+                break;
+            }
+            AppState.currentStep = agentName;
+            await runNextStep();
+            const agentState = AppState.agentUiStates[agentName];
+            if (agentState.status === 'error') {
+                break;
+            }
+            if (mode === 'step') {
+                pauseTimer();
+                break;
+            }
+        }
+        const lastAgentInRun = pipelineToRun[pipelineToRun.length - 1];
+        if (AppState.agentUiStates[lastAgentInRun]?.status === 'complete') {
+            // Run completed
+        }
+        if (AppState.activeMode !== 'step') {
+            stopAnalysis();
+        } else {
+            updateExecutionButtonStates();
+        }
+    }
+
+    function stopAnalysis() {
+        AppState.isRunInProgress = false;
+        AppState.stopRequested = false;
+        stopTimer();
+        updateExecutionButtonStates();
+    }
+   
+    async function runNextStep() {
+    const apiKey = getApiKey();
+    const currentAgentName = AppState.currentStep;
+    const agentState = AppState.agentUiStates[currentAgentName];
+    const mode = AppState.activeMode;
+    if (!currentAgentName || currentAgentName === 'complete') {
+        showErrorPopup('The pipeline is already complete.');
+        stopAnalysis();
+        return;
+    }
+    if (!apiKey) {
+        showErrorPopup('API Key is required.');
+        agentState.status = 'error';
+        updateAllAgentUIs();
+        return;
+    }
+    if (!AppState.projectName) {
+        showErrorPopup('Please provide Project Name');
+        agentState.status = 'error';
+        updateAllAgentUIs();
+        return;
+    }
+    const agentIndex = AGENT_PIPELINE.indexOf(currentAgentName);
+    if (agentIndex === -1) return;
+    if (mode === 'step') {
+        if (!AppState.timer.isRunning) resumeTimer();
+        runStepAnalysisButton.disabled = true;
+    }
+    try {
+        agentState.status = 'running';
+        updateAllAgentUIs();
+        let result;
+        const prevAgentName = agentIndex > 0 ? AGENT_PIPELINE[agentIndex - 1] : null;
+        let prevAgentOutput = prevAgentName ? AppState.agentOutputs[prevAgentName] : null;
+        if(currentAgentName === 'osiris') {
+            prevAgentOutput = AppState.agentOutputs.ptah;
+        } else if (currentAgentName === 'bastet') {
+            prevAgentOutput = AppState.agentOutputs.osiris;
+        } else if (currentAgentName === 'anubis') {
+            prevAgentOutput = AppState.agentOutputs.osiris;
+        } else if (currentAgentName === 'ptah') {
+            prevAgentOutput = AppState.agentOutputs.maat_requirements;
+        }
+        switch (currentAgentName) {
+            case 'maat':
+                result = await runExtractorAgent(apiKey, AppState.indexedChunksText, AppState.additionalContext);                
+                AppState.agentOutputs.maat_requirements = result.output;
+                AppState.agentOutputs.maat_gaps = result.gapsText;
+                AppState.thoughtStreams.maat = result.thought;
+                break;
+            case 'ptah':
+                result = await runBuilderAgent(apiKey, prevAgentOutput, AppState.indexedChunksText, AppState.agentFeedback.maat);
+                AppState.agentOutputs.ptah = result.output;
+                AppState.thoughtStreams.ptah = result.thought;
+                break;
+            case 'osiris':
+                result = await runExpanderAgent(apiKey, prevAgentOutput, AppState.indexedChunksText, AppState.agentFeedback.ptah);
+                AppState.agentOutputs.osiris = result.output;
+                AppState.thoughtStreams.osiris = result.thought;
+                break;
+            case 'bastet':
+                result = await runEstimatorAgent(apiKey, prevAgentOutput, AppState.agentFeedback.osiris);
+                AppState.agentOutputs.bastet = result.output;
+                AppState.thoughtStreams.bastet = result.thought;
+                break;
+            case 'anubis':
+                result = await runAutomatorAgent(apiKey, prevAgentOutput, AppState.agentFeedback.bastet);
+                AppState.agentOutputs.anubis = result.output;
+                AppState.thoughtStreams.anubis = result.thought;
+                break;
+            case 'horus':
+                result = await runHorusAgent(apiKey, AppState.agentOutputs.ptah, AppState.agentOutputs.maat_gaps, AppState.agentOutputs.bastet, AppState.agentOutputs.anubis, AppState.agentFeedback.anubis);
+                AppState.agentOutputs.horus = result.output;
+                AppState.thoughtStreams.horus = result.thought;
+                break;
+        }
+        agentState.status = 'complete';
+    } catch (error) {
+        console.error(`Error in agent ${currentAgentName}:`, error);
+        agentState.status = 'error';
+        agentState.error = error.message;
+        showErrorPopup(`Step failed: ${currentAgentName}. You can add feedback and retry.`);
+    } finally {
+        updateAllAgentUIs();
+        saveState();
+        if (mode === 'step' && currentAgentName !== 'horus') {
+            const nextIndex = agentIndex + 1;
+            AppState.currentStep = AGENT_PIPELINE[nextIndex];
+            runStepAnalysisButton.textContent = `Run Next Step (${AppState.currentStep})`;
+        }
+    }
+}
+
+    async function runThinkWriteAgent(apiKey, config) {
+        const { agentName, model, thinkPrompt, writePrompt, thinkContext, writeContext, writeTargetElement } = config;
+        updateAgentProgress(agentName, 'running');
+        let temperature;
+        switch (agentName) {
+            case 'maat':
+            case 'bastet':
+                temperature = 0.3;
+                break;
+            case 'horus':
+                temperature = 0.2;
+                break;
+            default:
+                temperature = 0.45;
+                break;
+        }
+        const useSearch = ['maat', 'ptah', 'osiris'].includes(agentName);
+        const thinkPayload = {
+            contents: [{ role: "user", parts: [...thinkContext, { text: thinkPrompt }] }],
+            generationConfig: {
+                "maxOutputTokens": 65536,
+                "temperature": temperature,
+                "topP": 0.95,
+                "thinkingConfig": { "thinkingBudget": AppState.isUltraThinkEnabled ? 24576 : -1 }
+            }
+        };
+        if (useSearch) {
+            thinkPayload.tools = [{ "google_search": {} }];
+        }
+        const thinkResult = await callStreamingApi(apiKey, thinkPayload, agentElements[agentName].thoughtStream, model, true);
+        const finalThought = thinkResult.text;
+        if (!finalThought) throw new Error(`${agentName} (Think) failed to produce output.`);
+        const researchBox = document.getElementById(`web-research-${agentName}`);
+        const researchContent = document.getElementById(`research-content-${agentName}`);
+        if (researchBox && researchContent) {
+            const researchRegex = /<web_research>([\s\S]*?)<\/web_research>/g;
+            const matches = finalThought.matchAll(researchRegex);
+            let researchHTML = '';
+            for (const match of matches) {
+                const innerXml = match[1];
+                const queryMatch = innerXml.match(/<query>([\s\S]*?)<\/query>/);
+                const sourceMatch = innerXml.match(/<source>([\s\S]*?)<\/source>/);
+                const summaryMatch = innerXml.match(/<summary>([\s\S]*?)<\/summary>/);
+                if (queryMatch && sourceMatch && summaryMatch) {
+                    const query = queryMatch[1].trim();
+                    const source = sourceMatch[1].trim();
+                    const summary = summaryMatch[1].trim();
+                    researchHTML += `
+    <div class="border-t border-slate-700 pt-2 mt-2">
+        <p class="text-xs text-slate-400 mb-1"><strong>Query:</strong> ${query}</p>
+        <p class="text-xs text-slate-300 mb-1">${summary}</p>
+        <a href="${source}" target="_blank" class="text-xs text-blue-400 hover:underline truncate block" rel="noopener noreferrer">Source: ${source}</a>
+    </div>
+    `;
+                }
+            }
+            if (researchHTML) {
+                researchContent.innerHTML = researchHTML;
+                researchBox.classList.remove('hidden');
+            }
+        }
+        const outputResult = await callStreamingApi(apiKey, createPayload(writePrompt(finalThought), writeContext, null, false, agentName), writeTargetElement, model, false);
+        if (!outputResult.text) throw new Error(`${agentName} (Write) failed to produce output.`);
+        updateAgentProgress(agentName, 'complete');
+        return { thought: finalThought, output: outputResult.text };
+    }
+
+    async function runSeshatAgent(apiKey, apiParts) {
+        updateAgentProgress('seshat', 'running');
+        const model = 'gemini-2.5-flash';
+        const prompt = `You are an expert document analyst. Your task is to analyze the following document(s), which may include text, images, or audio. For each piece of content, identify its source document name. Then, break all the information down into a series of detailed, self-contained, and semantically relevant chunks. Each chunk must have a concise, descriptive title, its content, and the source document name. Return the output as a JSON array of objects.`;
+        const schema = {
+            type: "ARRAY",
+            items: {
+                type: "OBJECT",
+                properties: {
+                    title: { type: "STRING" },
+                    content: { type: "STRING" },
+                    source: { type: "STRING" }
+                },
+                required: ["title", "content", "source"]
+            }
+        };
+        const finalApiParts = [...apiParts, {text: prompt}];
+        const payload = createPayload(null, finalApiParts, schema);
+        const result = await callStreamingApi(apiKey, payload, null, model, false);
+        const jsonText = result.text;
+        try {
+            if (!jsonText) {
+                throw new Error("The API returned an empty response. The document might be empty or unreadable.");
+            }
+            const chunksArray = JSON.parse(jsonText);
+            const chunksText = chunksArray.map((chunk, i) => `Chunk ${i+1}: ${chunk.title}\nSource: ${chunk.source}\n${chunk.content}`).join('\n\n---\n\n');
+            agentElements.seshat.out.innerHTML = '';
+            chunksArray.forEach(chunk => {
+                const chunkElement = document.createElement('div');
+                chunkElement.className = 'p-4 border border-slate-700 rounded-lg bg-slate-800/50 mb-3';
+                const sourceLabel = document.createElement('p');
+                sourceLabel.className = 'text-xs font-semibold text-purple-400 mb-2 mono-font';
+                sourceLabel.textContent = `Source: ${chunk.source || 'Unknown'}`;
+                chunkElement.innerHTML = `<h4 class="font-semibold text-indigo-400 mb-2">${chunk.title}</h4><p class="text-sm text-slate-300">${chunk.content}</p>`;
+                chunkElement.prepend(sourceLabel);
+                agentElements.seshat.out.appendChild(chunkElement);
+            });
+            updateAgentProgress('seshat', 'complete');
+            return chunksText;
+        } catch (e) {
+            console.error("Failed to parse Seshat's JSON output:", e);
+            agentElements.seshat.out.innerHTML = `<p class="text-red-400">Error: Could not parse document chunks.</p>`;
+            updateAgentProgress('seshat', 'error');
+            throw new Error("Seshat failed to produce valid JSON chunks.");
+        }
+    }
+
+    async function runExtractorAgent(apiKey, indexedChunks, additionalContext) {
+    const retrievalQuery = `Project Goal: ${AppState.projectGoal}\n\nAdditional Context: ${additionalContext}`;
+    const relevantContext = await retrieveRelevantContext(retrievalQuery);
+    const config = {
+        agentName: 'maat', model: 'gemini-2.5-pro',
+        thinkPrompt: PROMPTS.maat.think(additionalContext),
+        writePrompt: (thought) => PROMPTS.maat.write(thought, 'No stakeholder context provided.', relevantContext),
+        thinkContext: [{text: `Semantically Relevant Chunks:\n${relevantContext}`}],
+        writeContext: [], writeTargetElement: null
+    };
+    const { thought, output } = await runThinkWriteAgent(apiKey, config);
+    const { requirementsText, gapsText } = displayExtractorOutput(output);
+    return { thought, output: requirementsText, gapsText };
+}
+
+    async function runBuilderAgent(apiKey, requirements, indexedChunks, feedback) {
+        const thoughts = AppState.thoughtStreams.maat;
+        const config = {
+            agentName: 'ptah', model: 'gemini-2.5-pro',
+            thinkPrompt: PROMPTS.ptah.think(feedback, thoughts),
+            writePrompt: (thought) => PROMPTS.ptah.write(thought, requirements, indexedChunks),
+            thinkContext: [{text: `Requirements:\n${requirements}`}, {text: `Chunks:\n${indexedChunks}`}],
+            writeContext: [], writeTargetElement: agentElements.ptah.out
+        };
+        return await runThinkWriteAgent(apiKey, config);
+    }
+
+    async function runExpanderAgent(apiKey, userStories, indexedChunks, feedback) {
+        const thoughts = `--- From Ma'at ---\n${AppState.thoughtStreams.maat}\n\n--- From Ptah ---\n${AppState.thoughtStreams.ptah}`;
+        const config = {
+            agentName: 'osiris', model: 'gemini-2.5-pro',
+            thinkPrompt: PROMPTS.osiris.think(feedback, thoughts),
+            writePrompt: (thought) => PROMPTS.osiris.write(thought, userStories, indexedChunks),
+            thinkContext: [{text: `User Stories:\n${userStories}`}, {text: `Chunks:\n${indexedChunks}`}],
+            writeContext: [], writeTargetElement: agentElements.osiris.out
+        };
+        return await runThinkWriteAgent(apiKey, config);
+    }
+
+    async function runEstimatorAgent(apiKey, expandedStories, feedback) {
+        const agentName = 'bastet';
+        const model = 'gemini-2.5-pro';
+        const agentUI = agentElements[agentName];
+        updateAgentProgress(agentName, 'running');
+        agentUI.out.innerHTML = '';
+        const storyTitleRegex = /## User Story:\s*(.*)/;
+        const storyDelimiterRegex = /(?=## User Story:)/g;
+        const stories = expandedStories.split(storyDelimiterRegex).filter(s => s.trim() !== '');
+        if (stories.length === 0) {
+            throw new Error("No user stories could be parsed from the previous agent's output.");
+        }
+        let allEstimatesCsv = '"User Story Title","T-Shirt Size","Justification"\n';
+        let fullThoughtStream = '';
+        const previousThoughts = AppState.thoughtStreams.osiris;
+        agentUI.out.innerHTML = marked.parse(`\`\`\`csv\n${allEstimatesCsv}\`\`\``);
+        for (const storyText of stories) {
+            if (AppState.stopRequested) {
+                showErrorPopup("Analysis stopped by user.");
+                break;
+            }
+            const match = storyText.match(storyTitleRegex);
+            const storyTitle = match ? match[1].trim() : 'Untitled Story';
+            try {
+                const thinkPrompt = PROMPTS.bastet.think(storyText, storyTitle, feedback, previousThoughts);
+                const thinkResult = await callStreamingApi(apiKey, createPayload(thinkPrompt, [], null, false, 'bastet'), null, model, false);
+                const thought = thinkResult.text;
+                if (!thought) throw new Error(`Bastet (Think) failed for story: ${storyTitle}`);
+                fullThoughtStream += `--- Analyzing Story: "${storyTitle}" ---\n${thought}\n\n`;
+                agentUI.thoughtStream.innerHTML = marked.parse(fullThoughtStream);
+                agentUI.thoughtStream.scrollTop = agentUI.thoughtStream.scrollHeight;
+                const writePrompt = PROMPTS.bastet.write(thought, storyTitle);
+                const writeResult = await callStreamingApi(apiKey, createPayload(writePrompt, [], null, false, 'bastet'), null, model, false);
+                if (!writeResult.text) throw new Error(`Bastet (Write) failed for story: ${storyTitle}`);
+                const lineToAdd = writeResult.text.trim();
+                allEstimatesCsv += lineToAdd + '\n';
+                agentUI.out.innerHTML = marked.parse(`\`\`\`csv\n${allEstimatesCsv}\`\`\``);
+                agentUI.out.scrollTop = agentUI.out.scrollHeight;
+            } catch (error) {
+                console.error(`Error processing story "${storyTitle}" in Bastet:`, error);
+                allEstimatesCsv += `"${storyTitle}","ERROR","${error.message}"\n`;
+            }
+        }
+        updateAgentProgress(agentName, 'complete');
+        return { thought: fullThoughtStream, output: allEstimatesCsv.trim() };
+    }
+
+    async function runAutomatorAgent(apiKey, expandedStories, feedback) {
+        const thoughts = AppState.thoughtStreams.osiris;
+        const config = {
+            agentName: 'anubis', model: 'gemini-2.5-pro',
+            thinkPrompt: PROMPTS.anubis.think(feedback, thoughts),
+            writePrompt: (thought) => PROMPTS.anubis.write(thought, expandedStories),
+            thinkContext: [{text: `Expanded Stories:\n${expandedStories}`}],
+            writeContext: [], writeTargetElement: agentElements.anubis.out
+        };
+        return await runThinkWriteAgent(apiKey, config);
+    }
+   
+    async function runHorusAgent(apiKey, userStories, gaps, estimations, testCases, feedback) {
+        const config = {
+            agentName: 'horus', model: 'gemini-2.5-pro',
+            thinkPrompt: PROMPTS.horus.think(feedback),
+            writePrompt: (thought) => PROMPTS.horus.write(thought, userStories, gaps, estimations, testCases),
+            thinkContext: [{text: `Stories:\n${userStories}`}, {text: `Gaps:\n${gaps}`}, {text: `Estimates:\n${estimations}`}, {text: `Tests:\n${testCases}`}],
+            writeContext: [], writeTargetElement: null
+        };
+        const { thought, output } = await runThinkWriteAgent(apiKey, config);
+        displayHorusOutput(output, AppState.projectName);
+        return { thought, output };
+    }
+
+    async function handleThothChat() {
+        const userPrompt = thothInput.value.trim();
+        if (!userPrompt && AppState.thothAttachments.length === 0) return;
+        const apiKey = getApiKey();
+        if (!apiKey) {
+            showErrorPopup('API Key is required.');
+            return;
+        }
+        if (AppState.documentEmbeddings.length === 0 && AppState.thothAttachments.length === 0) {
+            showErrorPopup('Please index documents or attach a file to the chat.');
+            return;
+        }
+        appendMessageToChat(userPrompt || '[Attached Files]', 'user', 'text');
+        thothInput.value = '';
+        const thinkingBubble = appendMessageToChat('Thinking...', 'agent', 'thinking');
+        try {
+            let contextForChat = "No indexed documents available.";
+            if (AppState.documentEmbeddings.length > 0) {
+                contextForChat = await retrieveRelevantContext(userPrompt || "Analyze the attached files.");
+            }
+            const agentThoughts = Object.entries(AppState.thoughtStreams)
+                .filter(([, value]) => value)
+                .map(([key, value]) => `--- Thought Stream from ${key.toUpperCase()} ---\n${value}`)
+                .join('\n\n');
+            const apiParts = [];
+            AppState.thothAttachments.forEach(file => {
+                if (file.type === 'text') {
+                    apiParts.push({ text: `--- Attached File: ${file.name} ---\n${file.content}` });
+                } else {
+                    apiParts.push({ inlineData: { mimeType: file.mimeType, data: file.data } });
+                }
+            });
+            const fullUserPrompt =
+            `Your persona is a Principal Solution Architect. Your goal is to provide expert, factual guidance based on the context provided. You have access to web search to clarify technical terms or concepts if needed.
+
+**COMMUNICATION RULES:**
+1.  Analyze the user's question from the perspective of a Principal Solution Architect.
+2.  Formulate your answer based on the information contained within the provided context and, if necessary, supplement it with factual information from your web search.
+3.  Present the answer in a neutral, factual, and impersonal tone.
+4.  DO NOT use first-person statements (e.g., "I think," "I recommend," "As a PSA...").
+5.  DO NOT address the user by any name, even if a name appears in the context.
+6.  If the answer is not in the provided context or cannot be found with a web search, you must state: "The answer to that question is not available in the provided documents."
+
+---START OF CONTEXT---
+**Relevant Document Excerpts:**
+${contextForChat}
+
+**Agent Analysis & Research So Far:**
+${agentThoughts || 'No analysis has been run yet.'}
+---END OF CONTEXT---
+
+User Question: ${userPrompt || "Please analyze the attached file(s) in the context of our discussion."}`;
+            apiParts.push({ text: fullUserPrompt });
+            const payload = createPayload(null, apiParts, null, true);
+            const output = await callStreamingApi(apiKey, payload, null, 'gemini-2.5-pro');
+            thinkingBubble.parentElement.remove();
+            appendMessageToChat(output.text, 'agent', 'text');
+        } catch (error) {
+            console.error("Thoth Error:", error);
+            thinkingBubble.parentElement.remove();
+            appendMessageToChat(`Sorry, an error occurred: ${error.message}`, 'agent', 'text');
+        } finally {
+            clearThothAttachments();
+        }
+    }
+   
+    function appendMessageToChat(content, sender, type = 'text') {
+        const messageWrapper = document.createElement('div');
+        messageWrapper.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+        const messageBubble = document.createElement('div');
+        messageBubble.className = `chat-bubble ${sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-agent'}`;
+        switch (type) {
+            case 'thinking':
+                messageBubble.innerHTML = `<div class="flex items-center gap-2"><div class="loader !w-4 !h-4 !border-2"></div><span>Thinking...</span></div>`;
+                break;
+            case 'image':
+                messageBubble.style.padding = '0.5rem';
+                const img = document.createElement('img');
+                img.src = `data:image/png;base64,${content}`;
+                img.className = 'rounded-lg max-w-full h-auto';
+                messageBubble.appendChild(img);
+                break;
+            case 'text':
+            default:
+                const textContent = document.createElement('div');
+                textContent.innerHTML = marked.parse(content);
+                messageBubble.appendChild(textContent);
+                if (sender === 'agent') {
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.className = 'absolute bottom-1 right-1 flex gap-1';
+                    const speechButton = document.createElement('button');
+                    speechButton.className = 'speech-btn copy-btn opacity-50 hover:opacity-100 transition-opacity';
+                    speechButton.title = 'Read aloud';
+                    speechButton.innerHTML = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>`;
+                    speechButton.onclick = (e) => speakText(content, e.currentTarget);
+                    const copyButton = document.createElement('button');
+                    copyButton.className = 'copy-btn opacity-50 hover:opacity-100 transition-opacity';
+                    copyButton.title = 'Copy message';
+                    copyButton.innerHTML = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>`;
+                    copyButton.onclick = () => copyToClipboard(null, content);
+                    buttonContainer.appendChild(speechButton);
+                    buttonContainer.appendChild(copyButton);
+                    messageBubble.appendChild(buttonContainer);
+                }
+                break;
+        }
+        messageWrapper.appendChild(messageBubble);
+        thothChatHistory.appendChild(messageWrapper);
+        thothChatHistory.scrollTop = thothChatHistory.scrollHeight;
+        if (!fullscreenModal.classList.contains('hidden') && !modalChatContainer.classList.contains('hidden')) {
+            modalContent.innerHTML = thothChatHistory.innerHTML;
+            modalContent.scrollTop = modalContent.scrollHeight;
+        }
+        return messageBubble;
+    }
+
+    thothSendButton.addEventListener('click', handleThothChat);
+    thothInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleThothChat();
+        }
+    });
+
+    modalThothSendButton.addEventListener('click', () => {
+        const userPrompt = modalThothInput.value.trim();
+        if (userPrompt) {
+            thothInput.value = userPrompt;
+            handleThothChat();
+            modalThothInput.value = '';
+        }
+    });
+
+    modalThothInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            modalThothSendButton.click();
+        }
+    });
+
+    function createPayload(prompt, contextParts = [], schema = null, useTools = false, agentName = 'default') {
+        const allParts = [...contextParts];
+        if (prompt) {
+            allParts.push({text: prompt});
+        }
+        let temperature;
+        switch (agentName) {
+            case 'maat':
+            case 'bastet':
+                temperature = 0.3;
+                break;
+            case 'horus':
+                temperature = 0.2;
+                break;
+            default:
+                temperature = 0.45;
+                break;
+        }
+        const payload = {
+            contents: [{ role: "user", parts: allParts }],
+            generationConfig: {
+                "maxOutputTokens": 65536,
+                "temperature": temperature,
+                "topP": 0.95,
+                "thinkingConfig": { "thinkingBudget": AppState.isUltraThinkEnabled ? 24576 : -1 }
+            },
+            safetySettings: [
+                { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' }, { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' }, { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+            ]
+        };
+        if (schema) {
+            payload.generationConfig.responseMimeType = "application/json";
+            payload.generationConfig.responseSchema = schema;
+        }
+        if (useTools) {
+            payload.tools = [{ "google_search": {} }];
+        }
+        return payload;
+    }
+
+    function displayExtractorOutput(output) {
+        const gapsIdentifier = /### Identified Gaps & Questions/i;
+        const requirementsIdentifier = /### Extracted Requirements/i;
+        let requirementsText = output, gapsText = '';
+        if (gapsIdentifier.test(output)) {
+            [requirementsText, gapsText] = output.split(gapsIdentifier);
+        }
+        requirementsText = requirementsText.replace(requirementsIdentifier, '').trim();
+        agentElements.maat.out.innerHTML = marked.parse(requirementsText);
+        agentElements.maat.gaps.innerHTML = gapsText.trim() ? marked.parse(gapsText) : '<p class="text-slate-400">No gaps identified.</p>';
+        return { requirementsText, gapsText: gapsText.trim() };
+    }
+   
+    function displayHorusOutput(allTextOutput, projectName) {
+        if (!allTextOutput || !allTextOutput.trim()) {
+            showErrorPopup('Orchestrator failed to produce a build.');
+            return;
+        }
+        const finalFileName = projectName.replace(/\s/g, '_') || 'SCARAB_Build';
+        const sections = allTextOutput.split('---[END OF SECTION]---');
+        const [userStoriesCsv, gapsCsv, estimationsCsv, testCasesCsv] = sections.map(s => s.replace(/##.*_CSV\s*/, '').trim());
+        try {
+            const zip = new JSZip();
+            if (userStoriesCsv) zip.file(`${finalFileName}_1_user_stories.csv`, userStoriesCsv);
+            if (gapsCsv) zip.file(`${finalFileName}_2_gaps_and_questions.csv`, gapsCsv);
+            if (estimationsCsv) zip.file(`${finalFileName}_3_estimations.csv`, estimationsCsv);
+            if (testCasesCsv) zip.file(`${finalFileName}_4_test_cases.csv`, testCasesCsv);
+            zip.generateAsync({ type: "blob" })
+                .then(function(content) {
+                    const downloadButton = document.createElement('button');
+                    downloadButton.className = 'btn btn-success text-white font-bold py-3 px-6 rounded-lg';
+                    downloadButton.textContent = `Download "${finalFileName}.zip"`;
+                    downloadButton.onclick = () => saveAs(content, `${finalFileName}.zip`);
+                    downloadContainer.innerHTML = '';
+                    downloadContainer.appendChild(downloadButton);
+                });
+        } catch (error) {
+            console.error("Error creating zip file:", error);
+            showErrorPopup('Failed to create the final build package.');
+        }
+    }
+   
+    async function callStreamingApi(apiKey, payload, targetElement, model, checkForTools) {
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`;
+        if (targetElement) targetElement.innerHTML = '';
+        let fullResponseText = '';
+        let toolCallParts = [];
+        let toolCodeResults = [];
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            throw new Error(`API request failed: ${await response.text()}`);
+        }
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            let eolIndex;
+            while ((eolIndex = buffer.indexOf('\n')) >= 0) {
+                const line = buffer.substring(0, eolIndex).trim();
+                buffer = buffer.substring(eolIndex + 1);
+                if (line.startsWith('data: ')) {
+                    try {
+                        const chunk = JSON.parse(line.substring(6));
+                        const candidate = chunk.candidates?.[0];
+                        if (candidate?.content?.parts) {
+                            candidate.content.parts.forEach(part => {
+                                if (part.text) {
+                                    fullResponseText += part.text;
+                                    if (targetElement) {
+                                        targetElement.innerHTML = marked.parse(fullResponseText);
+                                        targetElement.scrollTop = targetElement.scrollHeight;
+                                    }
+                                } else if (checkForTools && part.tool_code) {
+                                    toolCallParts.push(part.tool_code);
+                                } else if (part.tool_code_result) {
+                                    toolCodeResults.push(part.tool_code_result);
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        // Ignore parsing errors for incomplete JSON chunks
+                    }
+                }
+            }
+        }
+        return { text: fullResponseText.trim(), toolCalls: toolCallParts, toolCodeResults: toolCodeResults };
+    }
+
+    function setLoadingState(isLoading, button, text) {
+        button.disabled = isLoading;
+        button.innerHTML = isLoading ? `<div class="loader !w-6 !h-6 !border-2"></div><span class="ml-2">Running...</span>` : text;
+    }
+
+    function copyToClipboard(elementId, textToCopy) {
+        if (elementId) textToCopy = document.getElementById(elementId).innerText;
+        const textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+        document.body.removeChild(textArea);
+    }
+   
+    function startTimer(isContinuous = false) {
+        if (AppState.timer.isRunning) return;
+        if (!isContinuous || !AppState.isManualRunStarted) {
+            AppState.timer.secondsElapsed = 0;
+        }
+        AppState.timer.isRunning = true;
+        timerLabel.textContent = "The current task is running...";
+        updateTimerDisplay();
+        AppState.timer.interval = setInterval(() => {
+            AppState.timer.secondsElapsed++;
+            updateTimerDisplay();
+        }, 1000);
+    }
+
+    function pauseTimer() {
+        clearInterval(AppState.timer.interval);
+        AppState.timer.isRunning = false;
+        timerLabel.textContent = `The Forge paused after ${AppState.timer.secondsElapsed} seconds.`;
+    }
+
+    function resumeTimer() {
+        if (AppState.timer.isRunning) return;
+        AppState.timer.isRunning = true;
+        timerLabel.textContent = "The current task is running...";
+        AppState.timer.interval = setInterval(() => {
+            AppState.timer.secondsElapsed++;
+            updateTimerDisplay();
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(AppState.timer.interval);
+        AppState.timer.isRunning = false;
+        if (AppState.timer.secondsElapsed > 0) {
+            timerLabel.textContent = `The current task ran for ${AppState.timer.secondsElapsed} seconds.`;
+        }
+        AppState.isManualRunStarted = false;
+    }
+
+    function updateTimerDisplay() {
+        const secondsStr = AppState.timer.secondsElapsed.toString().padStart(4, '0');
+        timerDisplay.innerHTML = `<span class="timer-digit">${secondsStr[0]}</span><span class="timer-digit">${secondsStr[1]}</span><span class="timer-digit">${secondsStr[2]}</span><span class="timer-digit">${secondsStr[3]}</span>`;
+    }
+
+    function openModal(content, filename, type = 'text', agentName = 'Content') {
+        AppState.modal = { content, filename };
+        modalTitle.textContent = `${agentName}: ${type.replace(/_/g, ' ')}`;
+        if (type === 'Chat_History') {
+            modalContent.innerHTML = content;
+            modalChatContainer.classList.remove('hidden');
+            modalThothInput.focus();
+        } else {
+            modalContent.innerHTML = marked.parse(content);
+            modalChatContainer.classList.add('hidden');
+        }
+        fullscreenModal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+        fullscreenModal.classList.add('hidden');
+        modalContent.innerHTML = '';
+        AppState.modal = { content: '', filename: '' };
+    }
+
+    modalCloseButton.addEventListener('click', closeModal);
+    fullscreenModal.addEventListener('click', (e) => {
+        if (e.target === fullscreenModal) closeModal();
+    });
+
+    modalDownloadButton.addEventListener('click', () => {
+        if (AppState.modal.content && AppState.modal.filename) {
+            const blob = new Blob([AppState.modal.content], { type: 'text/plain;charset=utf-8' });
+            saveAs(blob, AppState.modal.filename);
+        }
+    });
+
+    document.querySelectorAll('.expand-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const { contentSource, agentName, contentType } = e.currentTarget.dataset;
+            const sourceElement = document.getElementById(contentSource);
+            if (sourceElement) {
+                const projName = AppState.projectName.replace(/\s/g, '_') || 'Project';
+                const filename = `SCARAB_${projName}_${agentName}_${contentType}.txt`;
+                if (contentType === 'Chat_History') {
+                    openModal(sourceElement.innerHTML, filename, contentType, agentName);
+                } else {
+                    const content = sourceElement.innerText;
+                    openModal(content, filename, contentType, agentName);
+                }
+            }
+        });
+    });
+
+    document.querySelectorAll('.copy-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyToClipboard(e.currentTarget.dataset.target);
+        });
+    });
+   
+    const themeIcon = document.getElementById('themeIcon');
+    const sunIcon = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>`;
+    const moonIcon = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>`;
+
+    function applyTheme(theme) {
+        if (theme === 'light') {
+            document.body.classList.add('light-mode');
+            themeIcon.innerHTML = moonIcon;
+        } else {
+            document.body.classList.remove('light-mode');
+            themeIcon.innerHTML = sunIcon;
+        }
+    }
+
+    themeToggle.addEventListener('click', () => {
+        const newTheme = document.body.classList.toggle('light-mode') ? 'light' : 'dark';
+        localStorage.setItem('theme', newTheme);
+        applyTheme(newTheme);
+    });
+   
+    function updateAgentCardUI(agentName) {
+        const uiState = AppState.agentUiStates[agentName];
+        if (!uiState) return;
+        const controls = document.getElementById(`controls-${agentName}`);
+        if (!controls) return;
+        const feedbackBtn = controls.querySelector('.feedback-btn');
+        const retryBtn = controls.querySelector('.retry-btn');
+        const feedbackBox = document.getElementById(`feedback-box-${agentName}`);
+        feedbackBtn?.classList.add('hidden');
+        retryBtn?.classList.add('hidden');
+        feedbackBox?.classList.add('hidden');
+        if(feedbackBtn) feedbackBtn.disabled = uiState.feedbackSubmitted;
+        updateAgentProgress(agentName, uiState.status);
+        switch (uiState.status) {
+            case 'complete':
+                if (AppState.activeMode === 'step') {
+                    feedbackBtn?.classList.remove('hidden');
+                }
+                break;
+            case 'editing_feedback':
+                feedbackBox?.classList.remove('hidden');
+                feedbackBox?.querySelector('textarea')?.focus();
+                break;
+            case 'error':
+                retryBtn?.classList.remove('hidden');
+                if (AppState.activeMode === 'step') {
+                    feedbackBtn?.classList.remove('hidden');
+                }
+                break;
+        }
+    }
+
+    function updateAllAgentUIs() {
+        AGENT_PIPELINE.forEach(agentName => updateAgentCardUI(agentName));
+    }
+
+    function updateExecutionButtonStates() {
+        const isAnalysisRunning = AppState.isRunInProgress;
+        const isIndexingDone = AppState.isIndexingComplete;
+        const isComplete = AppState.currentStep === 'complete';
+        ultraThinkToggle.disabled = isAnalysisRunning;
+        runFullAnalysisButton.disabled = isAnalysisRunning || !isIndexingDone || isComplete;
+        runStepAnalysisButton.disabled = isAnalysisRunning || !isIndexingDone || isComplete;
+        runManualAgentsButton.disabled = isAnalysisRunning || !isIndexingDone || isComplete;
+        if (isAnalysisRunning) {
+            runFullAnalysisButton.classList.add('hidden');
+            runStepAnalysisButton.classList.add('hidden');
+            runManualAgentsButton.classList.add('hidden');
+            stopAnalysisButton.classList.remove('hidden');
+        } else {
+            runFullAnalysisButton.classList.remove('hidden');
+            runStepAnalysisButton.classList.remove('hidden');
+            runManualAgentsButton.classList.remove('hidden');
+            stopAnalysisButton.classList.add('hidden');
+        }
+        const stepButtonTextSpan = runStepAnalysisButton.querySelector('span');
+        if (stepButtonTextSpan) {
+            if (AppState.activeMode === 'step' && !isAnalysisRunning && !isComplete) {
+                stepButtonTextSpan.textContent = `Next Step (${AppState.currentStep})`;
+            } else if (!isAnalysisRunning) {
+                stepButtonTextSpan.textContent = 'HTL Analysis';
+            }
+        }
+    }
+
+    SELECTABLE_AGENTS.forEach((agentName) => {
+        const checkbox = agentElements[agentName].checkbox;
+        checkbox.addEventListener('change', () => {
+            AppState.agentUiStates[agentName].checked = checkbox.checked;
+            saveState();
+        });
+    });
+
+    forgeContent.addEventListener('click', (e) => {
+        const button = e.target.closest('button');
+        if (!button) return;
+        const agentCard = button.closest('.card');
+        const agentName = agentCard?.id.split('-')[1];
+        if (!agentName) return;
+        const uiState = AppState.agentUiStates[agentName];
+        if (button.classList.contains('feedback-btn')) {
+            uiState.status = 'editing_feedback';
+            AppState.refinementHistory[agentName] = [];
+            const historyElement = document.getElementById(`refinement-history-${agentName}`);
+            if (historyElement) historyElement.innerHTML = '';
+        } else if (button.classList.contains('refinement-send-btn')) {
+            handleRefinement(agentName);
+        } else if (button.classList.contains('approve-and-continue-btn')) {
+            if (AppState.activeMode === 'step') {
+                uiState.status = 'complete';
+                updateAgentCardUI(agentName);
+                const nextIndex = AGENT_PIPELINE.indexOf(agentName) + 1;
+                if (nextIndex < AGENT_PIPELINE.length) {
+                    AppState.currentStep = AGENT_PIPELINE[nextIndex];
+                    startAnalysis('step');
+                } else {
+                    stopAnalysis();
+                }
+            }
+        } else if (button.classList.contains('retry-btn')) {
+            startAnalysis(AppState.activeMode);
+        }
+        updateAgentCardUI(agentName);
+    });
+
+    function hydrateUIFromState() {
+    apiKeyInput.value = getApiKey();
+    projectNameInput.value = AppState.projectName || '';
+    additionalContextInput.value = AppState.additionalContext || '';
+    updateFileList();
+    updateProcessButtonState();
+    Object.keys(AppState.agentOutputs).forEach(key => {
+        if (key === 'maat_requirements' && AppState.agentOutputs[key]) agentElements.maat.out.innerHTML = marked.parse(AppState.agentOutputs[key]);
+        else if (key === 'maat_gaps' && AppState.agentOutputs[key]) agentElements.maat.gaps.innerHTML = marked.parse(AppState.agentOutputs[key]);
+        else if (agentElements[key]?.out && AppState.agentOutputs[key] && key !== 'horus') {
+            agentElements[key].out.innerHTML = marked.parse(AppState.agentOutputs[key]);
+        }
+    });
+    Object.keys(AppState.agentFeedback).forEach(agentName => {
+        const feedbackBox = document.getElementById(`feedback-box-${agentName}`);
+        if (feedbackBox) feedbackBox.querySelector('textarea').value = AppState.agentFeedback[agentName] || '';
+    });
+    SELECTABLE_AGENTS.forEach(agentName => {
+        const checkbox = agentElements[agentName].checkbox;
+        const uiState = AppState.agentUiStates[agentName];
+        if (checkbox && uiState) {
+            checkbox.checked = uiState.checked;
+        }
+    });
+    if (AppState.isIndexingComplete) {
+        startIndexButton.textContent = 'Documents Indexed';
+        startIndexButton.disabled = true;
+        thothInput.disabled = false;
+        thothSendButton.disabled = false;
+    }
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    applyTheme(savedTheme);
+    updateTimerDisplay();
+    updateExecutionButtonStates();
+    updateAllAgentUIs();
+}
+   
+    loadState();
+    ultraThinkToggle.addEventListener('change', (e) => {
+        AppState.isUltraThinkEnabled = e.target.checked;
+        saveState();
+    });
+
+        startIndexButton.addEventListener('click', startIndexing);
+        runFullAnalysisButton.addEventListener('click', () => startAnalysis('full'));
+        runStepAnalysisButton.addEventListener('click', () => startAnalysis('step'));
+        runManualAgentsButton.addEventListener('click', () => startAnalysis('manual')); 
+
+    hydrateUIFromState();
+});
+</script>
+</body>
+</html>
+
