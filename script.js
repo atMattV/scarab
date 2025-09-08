@@ -1955,7 +1955,7 @@ User Question: ${userPrompt || "Please analyze the attached file(s) in the conte
     updateAllAgentUIs();
 }
    
-    loadState();
+    //loadState();
     ultraThinkToggle.addEventListener('change', (e) => {
         AppState.isUltraThinkEnabled = e.target.checked;
         saveState();
