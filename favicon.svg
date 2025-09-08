@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="24" height="24"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5 10L12 3L19 10L12 21L5 10Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+    <path d="M12 3V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+    <path d="M12 21V15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+    <path d="M5 10H19" stroke="currentColor" stroke-width="1.5"></path>
+    <path d="M8.5 10L12 12.5L15.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg><style>@media (prefers-color-scheme: light) { :root { filter: none; } }
+@media (prefers-color-scheme: dark) { :root { filter: invert(100%); } }
+</style></svg>
